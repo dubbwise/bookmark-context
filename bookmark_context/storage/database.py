@@ -64,7 +64,13 @@ class Database:
 
     def list_collections(self) -> list[dict]:
         with self._connect() as conn:
-            rows = conn.execute("SELECT * FROM collections ORDER BY created_at").fetchall()
+            rows = conn.execute("""
+                SELECT c.*, COUNT(b.id) AS bookmark_count
+                FROM collections c
+                LEFT JOIN bookmarks b ON b.collection_id = c.id
+                GROUP BY c.id
+                ORDER BY c.created_at
+            """).fetchall()
         return [dict(r) for r in rows]
 
     def get_collection(self, coll_id: str) -> dict | None:

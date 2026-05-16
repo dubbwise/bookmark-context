@@ -8,13 +8,7 @@ router = APIRouter(prefix="/collections", tags=["collections"])
 
 @router.get("", response_model=list[CollectionResponse])
 def list_collections(request: Request):
-    db = request.app.state.db
-    collections = db.list_collections()
-    result = []
-    for c in collections:
-        count = len(db.list_bookmarks(c["id"]))
-        result.append(CollectionResponse(**c, bookmark_count=count))
-    return result
+    return [CollectionResponse(**c) for c in request.app.state.db.list_collections()]
 
 
 @router.post("", response_model=CollectionResponse, status_code=201)
