@@ -3,17 +3,14 @@
 2. Click "Load unpacked" → select extension/ directory
 
 ###Start the daemon:
+-- fix shortcut
+
 pip install -e .
 bookmark-context serve
 
-###Manual verification checklist (from the plan):
-- Status bar shows "Online · claude"
-- Create collections via "+ New" dialog
-- Add pages via side panel dropdown or right-click context menu
-- Click a collection → see bookmarks with status badges updating from Pending → Indexed
-- Options page (⚙) lets you change the daemon port
-
 ###Cursor MCP integration:
+-- fix shortcut
+
 Add to ~/.cursor/mcp.json:
 {
   "mcpServers": {
