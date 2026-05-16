@@ -123,6 +123,73 @@ function escHtml(str) {
   return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
+// --- Bookmark list view ---
+let selectedCollectionId = null;
+
+$("collections-list").addEventListener("click", async (e) => {
+  const item = e.target.closest(".collection-item");
+  if (!item) return;
+  selectedCollectionId = item.dataset.id;
+  const coll = collections.find((c) => c.id === selectedCollectionId);
+  $("selected-collection-name").textContent = coll?.name || "";
+  await renderBookmarks();
+  $("collections-section").style.display = "none";
+  $("bookmarks-section").style.display = "";
+});
+
+$("btn-back").addEventListener("click", () => {
+  selectedCollectionId = null;
+  $("bookmarks-section").style.display = "none";
+  $("collections-section").style.display = "";
+  loadCollections();
+});
+
+async function renderBookmarks() {
+  if (!selectedCollectionId) return;
+  const bookmarks = await api.listBookmarks(selectedCollectionId);
+  const list = $("bookmarks-list");
+  if (!bookmarks.length) {
+    list.innerHTML = '<li style="padding:12px 8px;color:#64748b;font-size:12px">No bookmarks yet. Add pages using the right-click menu or the panel below.</li>';
+    return;
+  }
+  list.innerHTML = bookmarks.map((b) => `
+    <li class="bookmark-item" data-id="${b.id}">
+      <div class="bookmark-item-title">${escHtml(b.title || b.url)}</div>
+      <div class="bookmark-item-url">${escHtml(b.url)}</div>
+      <span class="bookmark-status status-${b.index_status}">${statusLabel(b.index_status)}</span>
+      <div class="bookmark-actions">
+        <button class="btn-xs" data-action="reindex" data-id="${b.id}">↻ Re-index</button>
+        <button class="btn-xs danger" data-action="delete" data-id="${b.id}">✕ Remove</button>
+      </div>
+    </li>
+  `).join("");
+}
+
+function statusLabel(status) {
+  return { done: "✓ Indexed", pending: "⋯ Pending", indexing: "⟳ Indexing", error: "✕ Error" }[status] || status;
+}
+
+$("bookmarks-list").addEventListener("click", async (e) => {
+  const btn = e.target.closest("[data-action]");
+  if (!btn) return;
+  const { action, id } = btn.dataset;
+  if (action === "delete") {
+    await api.deleteBookmark(id);
+    await renderBookmarks();
+    await loadCollections();
+  } else if (action === "reindex") {
+    await api.reindexBookmark(id);
+    await renderBookmarks();
+  }
+});
+
+// Poll indexing status when bookmark list is visible
+setInterval(async () => {
+  if (selectedCollectionId && $("bookmarks-section").style.display !== "none") {
+    await renderBookmarks();
+  }
+}, 3000);
+
 // --- Init ---
 async function init() {
   await checkDaemon();
