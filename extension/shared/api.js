@@ -1,12 +1,16 @@
-export const DAEMON = "http://localhost:7331";
+async function getDaemonBase() {
+  const { daemonPort = 7331 } = await chrome.storage.sync.get("daemonPort");
+  return `http://localhost:${daemonPort}`;
+}
 
 async function request(method, path, body = null) {
+  const base = await getDaemonBase();
   const opts = {
     method,
     headers: { "Content-Type": "application/json" },
   };
   if (body !== null) opts.body = JSON.stringify(body);
-  const res = await fetch(`${DAEMON}${path}`, opts);
+  const res = await fetch(`${base}${path}`, opts);
   if (!res.ok) {
     const text = await res.text().catch(() => "");
     throw new Error(`${method} ${path} → ${res.status}: ${text}`);
