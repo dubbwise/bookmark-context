@@ -40,6 +40,7 @@ def test_update_bookmark_status(db: Database):
     db.update_bookmark_status(bm_id, "done")
     bm = db.get_bookmark(bm_id)
     assert bm["index_status"] == "done"
+    assert bm["indexed_at"] is not None
 
 
 def test_add_chunks(db: Database):
