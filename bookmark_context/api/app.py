@@ -31,7 +31,7 @@ def create_app(config: Config) -> FastAPI:
 
     @app.get("/status")
     def status():
-        return {"status": "ok", "version": VERSION, "ai_backend": config.ai_backend}
+        return {"status": "ok", "version": VERSION}
 
     from bookmark_context.api.collections import router as collections_router
     from bookmark_context.api.bookmarks import router as bookmarks_router

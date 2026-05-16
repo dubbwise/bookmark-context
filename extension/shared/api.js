@@ -31,6 +31,4 @@ export const api = {
     request("POST", `/collections/${collectionId}/bookmarks`, { url, title, html }),
   deleteBookmark: (id) => request("DELETE", `/bookmarks/${id}`),
   reindexBookmark: (id) => request("POST", `/bookmarks/${id}/reindex`),
-  askCollection: (collectionId, question) =>
-    request("POST", `/collections/${collectionId}/ask`, { question }),
 };

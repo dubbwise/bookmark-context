@@ -59,21 +59,6 @@ async def test_delete_bookmark(client, collection_id):
     assert response.status_code == 204
 
 
-async def test_ask_collection(client, collection_id):
-    mock_result = {
-        "answer": "Transformers use self-attention.",
-        "sources": [{"url": "https://arxiv.org", "title": "Paper", "excerpt": "..."}],
-    }
-    with patch("bookmark_context.api.bookmarks.ask_collection", return_value=mock_result):
-        with patch("bookmark_context.api.bookmarks._get_ai_adapter", return_value=MagicMock()):
-            response = await client.post(
-                f"/collections/{collection_id}/ask",
-                json={"question": "What are transformers?"},
-            )
-    assert response.status_code == 200
-    assert response.json()["answer"] == "Transformers use self-attention."
-
-
 async def test_add_duplicate_bookmark_returns_existing(client, collection_id):
     with patch("bookmark_context.api.bookmarks.IndexPipeline"):
         r1 = await client.post(

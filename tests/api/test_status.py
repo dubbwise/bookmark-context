@@ -10,8 +10,6 @@ def config(tmp_path: Path):
     return Config(
         db_path=tmp_path / "test.db",
         chroma_path=tmp_path / "chroma",
-        ai_backend="claude",
-        claude_api_key="sk-test",
     )
 
 
@@ -27,5 +25,4 @@ async def test_status_returns_ok(client):
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "ok"
-    assert data["ai_backend"] == "claude"
     assert "version" in data

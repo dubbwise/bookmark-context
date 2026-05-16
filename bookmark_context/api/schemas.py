@@ -32,12 +32,3 @@ class BookmarkResponse(BaseModel):
     indexed_at: str | None
     index_status: str
     error_message: str | None = None
-
-
-class AskRequest(BaseModel):
-    question: str
-
-
-class AskResponse(BaseModel):
-    answer: str
-    sources: list[dict]

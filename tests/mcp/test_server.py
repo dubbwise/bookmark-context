@@ -52,15 +52,13 @@ def test_handle_ask_collection():
         {"text": "transformers use self-attention", "metadata": {"url": "https://arxiv.org", "title": "Paper"}, "score": 0.95}
     ]
 
-    mock_ai = MagicMock()
-    mock_ai.complete.return_value = "Transformers use self-attention layers."
-
     result = handle_ask_collection(
         collection_id="col1",
         question="What do transformers use?",
         embedder=mock_embedder,
         vs=mock_vs,
-        ai=mock_ai,
     )
-    assert result["answer"] == "Transformers use self-attention layers."
-    assert len(result["sources"]) == 1
+    assert result["question"] == "What do transformers use?"
+    assert len(result["chunks"]) == 1
+    assert result["chunks"][0]["text"] == "transformers use self-attention"
+    assert result["chunks"][0]["url"] == "https://arxiv.org"
