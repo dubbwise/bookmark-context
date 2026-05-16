@@ -27,6 +27,7 @@ class BookmarkResponse(BaseModel):
     collection_id: str
     url: str
     title: str
+    favicon_url: str = ""
     added_at: str
     indexed_at: str | None
     index_status: str
