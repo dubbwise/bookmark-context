@@ -22,6 +22,13 @@ class BookmarkCreate(BaseModel):
     html: str | None = None
 
 
+class ScanWarning(BaseModel):
+    status: str = "scan_warning"
+    risk_score: float
+    signals: list[str]
+    matches: list[str]
+
+
 class BookmarkResponse(BaseModel):
     id: str
     collection_id: str

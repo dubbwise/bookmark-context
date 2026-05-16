@@ -49,6 +49,21 @@
     <span id="daemon-status-text">Checking daemon…</span>
   </footer>
 
+  <!-- Scan warning dialog -->
+  <dialog id="scan-warning-dialog">
+    <h3>⚠ Suspicious content detected</h3>
+    <p id="scan-warning-summary" style="font-size:12px;color:#94a3b8;margin:4px 0 12px"></p>
+    <div id="scan-details" style="display:none;margin-bottom:12px">
+      <div style="font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:6px">FLAGGED SNIPPETS</div>
+      <ul id="scan-matches-list" style="margin:0;padding:0 0 0 14px;font-size:11px;color:#fca5a5;list-style:disc"></ul>
+    </div>
+    <div class="dialog-buttons">
+      <button id="btn-scan-discard" class="btn-secondary">Don't save</button>
+      <button id="btn-scan-details-toggle">Show details</button>
+      <button id="btn-scan-force" style="background:#7f1d1d;color:#fca5a5;border:none;border-radius:6px;padding:6px 12px;font-size:12px;cursor:pointer">Save anyway</button>
+    </div>
+  </dialog>
+
   <!-- New collection dialog -->
   <dialog id="new-collection-dialog">
     <h3>New Collection</h3>

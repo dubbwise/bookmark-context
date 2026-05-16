@@ -63,26 +63,70 @@ async function loadCurrentPage() {
 }
 
 // --- Add to collection ---
+let _pendingSave = null;
+
+async function captureHtml(tabId) {
+  try {
+    const [result] = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => document.documentElement.outerHTML,
+    });
+    return result?.result || null;
+  } catch {
+    return null;
+  }
+}
+
+async function confirmSave(collectionId, url, title, html) {
+  const result = await api.addBookmark(collectionId, url, title, html);
+  if (result && result.status === "scan_warning") {
+    _pendingSave = { collectionId, url, title, html };
+    $("scan-warning-summary").textContent =
+      `Risk score ${result.risk_score.toFixed(2)} · signals: ${result.signals.join(", ")}`;
+    $("scan-matches-list").innerHTML = result.matches
+      .map((m) => `<li><code style="word-break:break-all">${escHtml(m)}</code></li>`)
+      .join("");
+    $("scan-details").style.display = "none";
+    $("btn-scan-details-toggle").textContent = "Show details";
+    $("scan-warning-dialog").showModal();
+    return;
+  }
+  await loadCollections();
+  $("btn-add-to-collection").textContent = "✓ Added";
+  setTimeout(() => { $("btn-add-to-collection").textContent = "+ Add to collection"; }, 2000);
+}
+
 $("btn-add-to-collection").addEventListener("click", async () => {
   const collectionId = $("add-to-collection-select").value;
   if (!collectionId) return;
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab) return;
-
-  // capture rendered HTML via content script
-  let html = null;
+  const html = await captureHtml(tab.id);
   try {
-    const [result] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => document.documentElement.outerHTML,
-    });
-    html = result?.result || null;
-  } catch {
-    // page may not allow scripting — proceed without HTML
+    await confirmSave(collectionId, tab.url, tab.title || tab.url, html);
+  } catch (e) {
+    alert(`Failed to add bookmark: ${e.message}`);
   }
+});
 
+$("btn-scan-discard").addEventListener("click", () => {
+  $("scan-warning-dialog").close();
+  _pendingSave = null;
+});
+
+$("btn-scan-details-toggle").addEventListener("click", () => {
+  const visible = $("scan-details").style.display !== "none";
+  $("scan-details").style.display = visible ? "none" : "";
+  $("btn-scan-details-toggle").textContent = visible ? "Show details" : "Hide details";
+});
+
+$("btn-scan-force").addEventListener("click", async () => {
+  $("scan-warning-dialog").close();
+  if (!_pendingSave) return;
+  const { collectionId, url, title, html } = _pendingSave;
+  _pendingSave = null;
   try {
-    await api.addBookmark(collectionId, tab.url, tab.title || tab.url, html);
+    await api.addBookmark(collectionId, url, title, html, true);
     await loadCollections();
     $("btn-add-to-collection").textContent = "✓ Added";
     setTimeout(() => { $("btn-add-to-collection").textContent = "+ Add to collection"; }, 2000);

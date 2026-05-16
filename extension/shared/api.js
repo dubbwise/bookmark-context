@@ -27,8 +27,8 @@ export const api = {
   deleteCollection: (id) => request("DELETE", `/collections/${id}`),
   listBookmarks: (collectionId) =>
     request("GET", `/collections/${collectionId}/bookmarks`),
-  addBookmark: (collectionId, url, title, html = null) =>
-    request("POST", `/collections/${collectionId}/bookmarks`, { url, title, html }),
+  addBookmark: (collectionId, url, title, html = null, force = false) =>
+    request("POST", `/collections/${collectionId}/bookmarks${force ? "?force=true" : ""}`, { url, title, html }),
   deleteBookmark: (id) => request("DELETE", `/bookmarks/${id}`),
   reindexBookmark: (id) => request("POST", `/bookmarks/${id}/reindex`),
 };

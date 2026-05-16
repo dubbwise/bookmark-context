@@ -29,7 +29,11 @@ class IndexPipeline:
 
             chroma_ids = [f"{bookmark_id}-{i}" for i in range(len(chunks))]
             metadatas = [
-                {"url": bm["url"], "title": bm["title"], "bookmark_id": bookmark_id}
+                {
+                    "url": bm["url"],
+                    "title": bm["title"],
+                    "bookmark_id": bookmark_id,
+                }
                 for _ in chunks
             ]
             self.vs.add_chunks(
