@@ -1,7 +1,4 @@
 from __future__ import annotations
-import subprocess
-import time
-import httpx
 from mcp.server.fastmcp import FastMCP
 from bookmark_context.config import load_config
 from bookmark_context.storage.database import Database
@@ -67,27 +64,9 @@ def handle_ask_collection(
     }
 
 
-def _ensure_daemon(port: int) -> None:
-    url = f"http://localhost:{port}/status"
-    try:
-        httpx.get(url, timeout=1)
-        return
-    except (httpx.ConnectError, httpx.TimeoutException):
-        pass
-    subprocess.Popen(["bookmark-context", "serve"])
-    for _ in range(20):
-        time.sleep(0.5)
-        try:
-            httpx.get(url, timeout=1)
-            return
-        except (httpx.ConnectError, httpx.TimeoutException):
-            continue
-    raise RuntimeError("Daemon failed to start within 10 seconds")
-
 
 def run_mcp_server() -> None:
     config = load_config()
-    _ensure_daemon(config.daemon_port)
 
     db = Database(config.db_path)
     db.init()
