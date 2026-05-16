@@ -29,6 +29,9 @@ dev = [
     "respx>=0.21",  # mock httpx
 ]
 
+[tool.setuptools.packages.find]
+include = ["bookmark_context*"]
+
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
