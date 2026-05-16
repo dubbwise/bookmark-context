@@ -6,7 +6,51 @@
   <title>Bookmark Context</title>
 </head>
 <body>
-  <p>Loading…</p>
+  <header>
+    <span class="logo">📚 Bookmark Context</span>
+    <a href="../options/options.html" target="_blank" class="settings-link" title="Settings">⚙</a>
+  </header>
+
+  <div class="search-bar">
+    <input type="text" id="search" placeholder="🔍  Search collections…" autocomplete="off">
+  </div>
+
+  <section class="collections-section">
+    <div class="section-header">
+      <span class="label">Collections</span>
+      <button id="btn-new-collection" class="btn-small">+ New</button>
+    </div>
+    <ul id="collections-list"></ul>
+  </section>
+
+  <section class="current-page-section">
+    <div class="label">Current page</div>
+    <div id="current-page-card" class="page-card">
+      <div id="current-page-title" class="page-title">—</div>
+      <div id="current-page-url" class="page-url">—</div>
+    </div>
+    <select id="add-to-collection-select">
+      <option value="">Select collection…</option>
+    </select>
+    <button id="btn-add-to-collection" class="btn-primary">+ Add to collection</button>
+  </section>
+
+  <footer class="status-bar">
+    <span id="daemon-indicator" class="indicator offline"></span>
+    <span id="daemon-status-text">Checking daemon…</span>
+  </footer>
+
+  <!-- New collection dialog -->
+  <dialog id="new-collection-dialog">
+    <h3>New Collection</h3>
+    <input type="text" id="new-collection-name" placeholder="Collection name" autocomplete="off">
+    <input type="text" id="new-collection-desc" placeholder="Description (optional)" autocomplete="off">
+    <div class="dialog-buttons">
+      <button id="btn-create-collection" class="btn-primary">Create</button>
+      <button id="btn-cancel-dialog" class="btn-secondary">Cancel</button>
+    </div>
+  </dialog>
+
   <script type="module" src="sidepanel.js"></script>
 </body>
 </html>
