@@ -1,6 +1,6 @@
 from __future__ import annotations
 from mcp.server.fastmcp import FastMCP
-from bookmark_context.config import load_config
+from bookmark_context.config import load_config, Config
 from bookmark_context.storage.database import Database
 from bookmark_context.storage.vector_store import VectorStore
 from bookmark_context.indexer.embedder import Embedder
@@ -64,29 +64,48 @@ def handle_ask_collection(
     }
 
 
-
 def run_mcp_server() -> None:
     config = load_config()
 
-    db = Database(config.db_path)
-    db.init()
-    vs = VectorStore(config.chroma_path)
-    embedder = Embedder(config.embed_model)
+    # Lazy singletons — initialised on first tool call, not at startup,
+    # so the MCP server responds to ListToolsRequest immediately.
+    _db: Database | None = None
+    _vs: VectorStore | None = None
+    _embedder: Embedder | None = None
+
+    def get_db() -> Database:
+        nonlocal _db
+        if _db is None:
+            _db = Database(config.db_path)
+            _db.init()
+        return _db
+
+    def get_vs() -> VectorStore:
+        nonlocal _vs
+        if _vs is None:
+            _vs = VectorStore(config.chroma_path)
+        return _vs
+
+    def get_embedder() -> Embedder:
+        nonlocal _embedder
+        if _embedder is None:
+            _embedder = Embedder(config.embed_model)
+        return _embedder
 
     @mcp.tool()
     def list_collections() -> list[dict]:
         """List all bookmark collections with their bookmark counts."""
-        return handle_list_collections(db)
+        return handle_list_collections(get_db())
 
     @mcp.tool()
     def search_collection(collection_id: str, query: str, top_k: int = 5) -> list[dict]:
         """Semantic search over a bookmark collection. Returns relevant text chunks with source URLs."""
-        return handle_search_collection(collection_id, query, top_k, embedder, vs)
+        return handle_search_collection(collection_id, query, top_k, get_embedder(), get_vs())
 
     @mcp.tool()
     def ask_collection(collection_id: str, question: str, top_k: int = 5) -> dict:
         """Retrieve context chunks relevant to a question from a bookmark collection.
         Returns the question and ranked chunks — use them to synthesize your answer."""
-        return handle_ask_collection(collection_id, question, embedder, vs, top_k)
+        return handle_ask_collection(collection_id, question, get_embedder(), get_vs(), top_k)
 
     mcp.run()
