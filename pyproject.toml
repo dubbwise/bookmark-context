@@ -13,7 +13,7 @@ dependencies = [
     "trafilatura>=1.9",
     "fastembed>=0.3",
     "chromadb>=0.5",
-    "mcp>=1.0",
+    "mcp>=1.0,<1.6",
     "pydantic>=2.7",
 ]
 
