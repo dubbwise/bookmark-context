@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Fix four structural issues: chunk size silently exceeding the embedding model's token limit, no pagination on the bookmark list, storage paths not configurable via `config.toml`, and unbounded concurrent index jobs potentially starving the HTTP server.
+**Goal:** Fix five structural issues: chunk size silently exceeding the embedding model's token limit, no pagination on the bookmark list, storage paths not configurable via `config.toml`, unbounded concurrent index jobs potentially starving the HTTP server, and the scan gate causing trafilatura to parse every clean page's HTML twice (once for scan, once in the pipeline).
 
-**Architecture:** Chunker default drops from 500 to 350 words (stays under the 512-token model limit). `list_bookmarks` gains `limit`/`offset` query params in DB, API, and extension UI. `load_config` learns to read `db_path` and `chroma_path` from TOML. A module-level `asyncio.Semaphore(3)` in `bookmarks.py` caps concurrent index tasks.
+**Architecture:** Chunker default drops from 500 to 350 words (stays under the 512-token model limit). `list_bookmarks` gains `limit`/`offset` query params in DB, API, and extension UI. `load_config` learns to read `db_path` and `chroma_path` from TOML. A module-level `asyncio.Semaphore(3)` in `bookmarks.py` caps concurrent index tasks. The pipeline gains an optional `text: str | None` parameter so the scan gate can pass pre-extracted text instead of re-scraping.
 
 **Tech Stack:** Python stdlib `asyncio`, existing FastAPI/pytest/httpx stack, vanilla JS
 
@@ -14,7 +14,7 @@
 
 - Modify: `bookmark_context/indexer/chunker.py` — default `chunk_size` 500 → 350
 - Modify: `bookmark_context/storage/database.py` — `list_bookmarks` gains `limit`/`offset`
-- Modify: `bookmark_context/api/bookmarks.py` — expose pagination params, add semaphore
+- Modify: `bookmark_context/api/bookmarks.py` — expose pagination params, add semaphore, pass pre-extracted text to pipeline
 - Modify: `bookmark_context/config.py` — parse `db_path`/`chroma_path` from TOML
 - Modify: `extension/shared/api.js` — pass pagination params to `listBookmarks`
 - Modify: `extension/sidepanel/sidepanel.js` — paginated bookmark list with Load More button
@@ -175,6 +175,8 @@ git commit -m "feat: add limit/offset pagination to list_bookmarks"
 ---
 
 ### Task 3: Expose pagination in the API and add indexing semaphore
+
+> **⚠ Note (added after scanner implementation):** This task was written before the injection scanner was added to `bookmarks.py`. The rewrite in Step 3 below does NOT include the scan gate or `force` query parameter. Before applying that rewrite, read the current `bookmark_context/api/bookmarks.py` and merge the scan gate logic (`if not force: scrape + scan + return ScanWarning`) and the `force: bool = Query(default=False)` parameter into the new version. The scan gate must be preserved; the semaphore wraps only the pipeline call, not the scan.
 
 **Files:**
 - Modify: `bookmark_context/api/bookmarks.py`
@@ -477,4 +479,108 @@ async function renderBookmarks(reset = true) {
 ```bash
 git add extension/shared/api.js extension/sidepanel/sidepanel.js
 git commit -m "feat: paginate bookmark list in side panel with Load More button (50 per page)"
+```
+
+---
+
+### Task 6: Eliminate double-scraping on clean path
+
+**Files:**
+- Modify: `bookmark_context/indexer/pipeline.py`
+- Modify: `bookmark_context/api/bookmarks.py`
+- Test: `tests/indexer/test_pipeline.py`
+
+**Context:** When a user adds a clean page, `add_bookmark` calls `scrape_url(url, html=html)` for the scan gate, confirms it's clean, then queues `pipeline.index_bookmark(bm_id, html)`. The pipeline calls `scrape_url` again with the same HTML. Trafilatura parses the same string twice. No network cost (HTML was captured by the extension), but it's wasteful. Fix: add `text: str | None = None` to `IndexPipeline.index_bookmark` so the scan gate can pass the already-extracted text.
+
+- [ ] **Step 1: Write failing test**
+
+Append to `tests/indexer/test_pipeline.py`:
+```python
+def test_index_bookmark_uses_preextracted_text(db, vs, mock_embedder):
+    coll_id = db.create_collection("Test", "")
+    bm_id = db.add_bookmark(coll_id, "https://example.com", "Example")
+
+    with patch("bookmark_context.indexer.pipeline.scrape_url") as mock_scrape:
+        pipeline = IndexPipeline(db=db, vs=vs, embedder=mock_embedder)
+        pipeline.index_bookmark(bm_id, text="Pre-extracted article content here")
+
+    mock_scrape.assert_not_called()
+    bm = db.get_bookmark(bm_id)
+    assert bm["index_status"] == "done"
+```
+
+- [ ] **Step 2: Run to verify failure**
+
+```
+venv/bin/pytest tests/indexer/test_pipeline.py::test_index_bookmark_uses_preextracted_text -v
+```
+Expected: FAIL — `scrape_url` is called even when text is provided
+
+- [ ] **Step 3: Add `text` param to `IndexPipeline.index_bookmark`**
+
+In `bookmark_context/indexer/pipeline.py`, update the method signature and skip scraping when `text` is provided:
+
+```python
+    def index_bookmark(
+        self, bookmark_id: str, html: str | None = None, text: str | None = None
+    ) -> None:
+        bm = self.db.get_bookmark(bookmark_id)
+        if not bm:
+            return
+
+        self.db.update_bookmark_status(bookmark_id, "indexing")
+        try:
+            if text is None:
+                text = scrape_url(bm["url"], html=html)
+            if not text:
+                self.db.update_bookmark_status(bookmark_id, "error", "No content extracted from page")
+                return
+
+            chunks = chunk_text(text)
+            scan_results = scan_chunks(chunks)
+            embeddings = self.embedder.embed(chunks)
+            # ... rest unchanged
+```
+
+- [ ] **Step 4: Pass pre-extracted text from `add_bookmark` in `bookmark_context/api/bookmarks.py`**
+
+In the scan gate block, after confirming the page is clean, pass `text` to the background task:
+
+```python
+    if not force:
+        text = scrape_url(body.url, html=body.html)
+        if text:
+            chunks = chunk_text(text)
+            results = scan_chunks(chunks)
+            risky = [r for r in results if r.risk_score > 0]
+            if risky:
+                # ... return ScanWarning (unchanged)
+            # Clean — pass extracted text to pipeline to avoid re-scraping
+            bm_id = db.add_bookmark(collection_id, body.url, body.title or body.url)
+            pipeline = IndexPipeline(db=db, vs=request.app.state.vs, embedder=request.app.state.embedder)
+            background_tasks.add_task(pipeline.index_bookmark, bm_id, body.html, text)
+            bm = db.get_bookmark(bm_id)
+            return JSONResponse(status_code=201, content=BookmarkResponse(**bm).model_dump())
+
+    # force=True or scrape returned empty — fall through to normal save
+    bm_id = db.add_bookmark(collection_id, body.url, body.title or body.url)
+    pipeline = IndexPipeline(db=db, vs=request.app.state.vs, embedder=request.app.state.embedder)
+    background_tasks.add_task(pipeline.index_bookmark, bm_id, body.html)
+    bm = db.get_bookmark(bm_id)
+    return JSONResponse(status_code=201, content=BookmarkResponse(**bm).model_dump())
+```
+
+- [ ] **Step 5: Run full suite**
+
+```
+venv/bin/pytest -q
+```
+Expected: all tests pass
+
+- [ ] **Step 6: Commit**
+
+```bash
+git add bookmark_context/indexer/pipeline.py bookmark_context/api/bookmarks.py \
+        tests/indexer/test_pipeline.py
+git commit -m "perf: pass pre-extracted text to pipeline to avoid double-scraping on clean path"
 ```
