@@ -8,6 +8,7 @@ from bookmark_context.storage.database import Database
 from bookmark_context.storage.vector_store import VectorStore
 from bookmark_context.indexer.embedder import Embedder
 from bookmark_context.rag import ask_collection
+from bookmark_context.ai.base import AIAdapter
 
 mcp = FastMCP("bookmark-context")
 
@@ -50,7 +51,7 @@ def handle_ask_collection(
     question: str,
     embedder: Embedder,
     vs: VectorStore,
-    ai,
+    ai: AIAdapter,
 ) -> dict:
     return ask_collection(
         collection_id=collection_id,
