@@ -1,2 +1,32 @@
-// Daemon API wrapper — implemented in Task 2
 export const DAEMON = "http://localhost:7331";
+
+async function request(method, path, body = null) {
+  const opts = {
+    method,
+    headers: { "Content-Type": "application/json" },
+  };
+  if (body !== null) opts.body = JSON.stringify(body);
+  const res = await fetch(`${DAEMON}${path}`, opts);
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`${method} ${path} → ${res.status}: ${text}`);
+  }
+  if (res.status === 204) return null;
+  return res.json();
+}
+
+export const api = {
+  status: () => request("GET", "/status"),
+  listCollections: () => request("GET", "/collections"),
+  createCollection: (name, description = "") =>
+    request("POST", "/collections", { name, description }),
+  deleteCollection: (id) => request("DELETE", `/collections/${id}`),
+  listBookmarks: (collectionId) =>
+    request("GET", `/collections/${collectionId}/bookmarks`),
+  addBookmark: (collectionId, url, title, html = null) =>
+    request("POST", `/collections/${collectionId}/bookmarks`, { url, title, html }),
+  deleteBookmark: (id) => request("DELETE", `/bookmarks/${id}`),
+  reindexBookmark: (id) => request("POST", `/bookmarks/${id}/reindex`),
+  askCollection: (collectionId, question) =>
+    request("POST", `/collections/${collectionId}/ask`, { question }),
+};
