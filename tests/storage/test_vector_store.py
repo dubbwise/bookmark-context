@@ -28,6 +28,27 @@ def test_add_and_query_chunks(vs: VectorStore):
     assert results[0]["chroma_id"] == "c1"
 
 
+def test_query_empty_collection_returns_empty(vs: VectorStore):
+    vs.add_chunks(
+        collection_id="col1",
+        chroma_ids=["c1"],
+        texts=["text"],
+        embeddings=[[0.1, 0.2, 0.3]],
+        metadatas=[{"url": "https://a.com", "title": "A", "bookmark_id": "bm1"}],
+    )
+    vs.delete_bookmark_chunks("col1", "bm1")
+    results = vs.query(collection_id="col1", query_embedding=[0.1, 0.2, 0.3], top_k=5)
+    assert results == []
+
+
+def test_delete_nonexistent_collection_is_noop(vs: VectorStore):
+    vs.delete_collection("does-not-exist")
+
+
+def test_delete_bookmark_chunks_on_missing_collection_is_noop(vs: VectorStore):
+    vs.delete_bookmark_chunks("does-not-exist", "bm1")
+
+
 def test_delete_collection(vs: VectorStore):
     vs.add_chunks(
         collection_id="col1",

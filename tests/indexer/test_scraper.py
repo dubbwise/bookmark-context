@@ -47,6 +47,13 @@ def test_scrape_url_returns_empty_on_http_error():
     assert text == ""
 
 
+def test_scrape_url_returns_empty_on_request_error():
+    with respx.mock:
+        respx.get("https://example.com/timeout").mock(side_effect=httpx.ConnectError("refused"))
+        text = scrape_url("https://example.com/timeout")
+    assert text == ""
+
+
 def test_scrape_url_uses_provided_html():
     text = scrape_url("https://example.com", html=SAMPLE_HTML)
     assert "Main Article Title" in text

@@ -39,7 +39,7 @@ def test_handle_search_collection():
         vs=mock_vs,
     )
     assert len(result) == 1
-    assert result[0]["chunk"] == "relevant chunk"
+    assert result[0]["text"] == "relevant chunk"
     assert result[0]["score"] == 0.9
 
 

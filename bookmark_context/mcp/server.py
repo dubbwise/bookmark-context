@@ -21,6 +21,22 @@ def handle_list_collections(db: Database) -> list[dict]:
     ]
 
 
+def _chunk_dict(r: dict) -> dict:
+    """Normalise a ChromaDB result row, including injection metadata when present."""
+    risk = r["metadata"].get("injection_risk", None)
+    signals = r["metadata"].get("injection_signals", "")
+    d = {
+        "text": r["text"],
+        "url": r["metadata"].get("url", ""),
+        "title": r["metadata"].get("title", ""),
+        "score": r["score"],
+    }
+    if risk is not None:
+        d["injection_risk"] = risk
+        d["injection_signals"] = [s for s in signals.split(",") if s]
+    return d
+
+
 def handle_search_collection(
     collection_id: str,
     query: str,
@@ -30,15 +46,7 @@ def handle_search_collection(
 ) -> list[dict]:
     query_embedding = embedder.embed([query])[0]
     results = vs.query(collection_id=collection_id, query_embedding=query_embedding, top_k=top_k)
-    return [
-        {
-            "chunk": r["text"],
-            "url": r["metadata"].get("url", ""),
-            "title": r["metadata"].get("title", ""),
-            "score": r["score"],
-        }
-        for r in results
-    ]
+    return [_chunk_dict(r) for r in results]
 
 
 def handle_ask_collection(
@@ -52,15 +60,7 @@ def handle_ask_collection(
     results = vs.query(collection_id=collection_id, query_embedding=query_embedding, top_k=top_k)
     return {
         "question": question,
-        "chunks": [
-            {
-                "text": r["text"],
-                "url": r["metadata"].get("url", ""),
-                "title": r["metadata"].get("title", ""),
-                "score": r["score"],
-            }
-            for r in results
-        ],
+        "chunks": [_chunk_dict(r) for r in results],
     }
 
 

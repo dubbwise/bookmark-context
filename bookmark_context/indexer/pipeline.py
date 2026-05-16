@@ -4,6 +4,7 @@ from bookmark_context.storage.vector_store import VectorStore
 from bookmark_context.indexer.embedder import Embedder
 from bookmark_context.indexer.scraper import scrape_url
 from bookmark_context.indexer.chunker import chunk_text
+from bookmark_context.indexer.scanner import scan_chunks
 
 
 class IndexPipeline:
@@ -25,6 +26,7 @@ class IndexPipeline:
                 return
 
             chunks = chunk_text(text)
+            scan_results = scan_chunks(chunks)
             embeddings = self.embedder.embed(chunks)
 
             chroma_ids = [f"{bookmark_id}-{i}" for i in range(len(chunks))]
@@ -33,8 +35,10 @@ class IndexPipeline:
                     "url": bm["url"],
                     "title": bm["title"],
                     "bookmark_id": bookmark_id,
+                    "injection_risk": result.risk_score,
+                    "injection_signals": ",".join(result.signals),
                 }
-                for _ in chunks
+                for result in scan_results
             ]
             self.vs.add_chunks(
                 collection_id=bm["collection_id"],

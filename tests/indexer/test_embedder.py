@@ -25,3 +25,15 @@ def test_embed_single_text():
         result = embedder.embed(["just one"])
 
     assert len(result) == 1
+
+
+def test_embed_converts_numpy_array_via_tolist():
+    import numpy as np
+    mock_model = MagicMock()
+    mock_model.embed.return_value = iter([np.array([0.1, 0.2, 0.3])])
+
+    with patch("bookmark_context.indexer.embedder.TextEmbedding", return_value=mock_model):
+        embedder = Embedder("BAAI/bge-small-en-v1.5")
+        result = embedder.embed(["hello"])
+
+    assert result == [[pytest.approx(0.1), pytest.approx(0.2), pytest.approx(0.3)]]
