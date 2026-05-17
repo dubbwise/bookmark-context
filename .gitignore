@@ -8,3 +8,4 @@ dist/
 .superpowers/
 .playwright-mcp/
 extension/node_modules/
+.DS_Store

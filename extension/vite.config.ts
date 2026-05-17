@@ -5,9 +5,11 @@ import { fileURLToPath } from "url";
 import path from "path";
 const __dirname = fileURLToPath(new URL(".", import.meta.url));
 
-// Chrome extensions load files via chrome-extension:// scheme. crossorigin
-// attributes on module scripts trigger CORS-mode fetches which return
-// application/octet-stream, causing strict MIME type errors. Strip them.
+// Chrome extensions use chrome-extension:// scheme.
+// - crossorigin on <script type="module"> triggers CORS mode; chrome-extension://
+//   responses don't carry CORS headers → browser falls back to application/octet-stream
+//   and strict module MIME checking rejects the script.
+// - The modulepreload polyfill is unnecessary for Chrome 66+ and can interfere.
 const removeCrossorigin = {
   name: "remove-crossorigin",
   transformIndexHtml: {
@@ -17,8 +19,6 @@ const removeCrossorigin = {
 };
 
 export default defineConfig({
-  // Relative paths are required for chrome-extension:// URLs.
-  base: "./",
   plugins: [
     react(),
     webExtension(),
@@ -30,6 +30,7 @@ export default defineConfig({
   build: {
     outDir: "dist",
     emptyOutDir: true,
+    modulePreload: { polyfill: false },
   },
   test: {
     environment: "jsdom",

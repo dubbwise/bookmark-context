@@ -36,11 +36,13 @@ pip install -e .
 2. Click **Load unpacked** → select the `extension/dist/` directory
 3. Pin the extension; click its icon to open the side panel
 
+> From extension folder run dev: `npm run dev`
 > To rebuild the extension after source changes: `cd extension && npm install && npm run build`
 
 ### 3. Start the daemon
 
 ```bash
+source venv/bin/activate
 bookmark-context serve
 ```
 
