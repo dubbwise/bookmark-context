@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -42,13 +42,18 @@ export default function CurrentPage({ currentTab, collections, onAdd }: CurrentP
       const html = await captureHtml();
       await onAdd(selectedCollectionId, html);
       setAdded(true);
-      setTimeout(() => setAdded(false), 2000);
     } catch (e) {
       alert(`Failed to add bookmark: ${(e as Error).message}`);
     } finally {
       setAdding(false);
     }
   }
+
+  useEffect(() => {
+    if (!added) return;
+    const timer = setTimeout(() => setAdded(false), 2000);
+    return () => clearTimeout(timer);
+  }, [added]);
 
   return (
     <>
@@ -77,7 +82,7 @@ export default function CurrentPage({ currentTab, collections, onAdd }: CurrentP
         </Select>
         <Button
           className="w-full h-8 text-xs"
-          disabled={!selectedCollectionId || adding}
+          disabled={!selectedCollectionId || adding || added}
           onClick={handleAdd}
         >
           {added ? "✓ Added" : adding ? "Adding…" : "+ Add to collection"}
