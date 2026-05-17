@@ -234,6 +234,7 @@ $("btn-update-collection").addEventListener("click", async () => {
   const name = $("rename-collection-name").value.trim();
   if (!name || !_renamingCollection) return;
   const updatedId = _renamingCollection.id;
+  $("btn-update-collection").disabled = true;
   try {
     await api.updateCollection(
       updatedId,
@@ -244,11 +245,13 @@ $("btn-update-collection").addEventListener("click", async () => {
     _renamingCollection = null;
     await loadCollections();
     if (_selectedCollection?.id === updatedId) {
-      _selectedCollection.name = name;
-      $("selected-collection-name").textContent = name;
+      _selectedCollection = collections.find((c) => c.id === updatedId) || _selectedCollection;
+      $("selected-collection-name").textContent = _selectedCollection.name;
     }
   } catch (e) {
     alert(`Failed to rename: ${e.message}`);
+  } finally {
+    $("btn-update-collection").disabled = false;
   }
 });
 
