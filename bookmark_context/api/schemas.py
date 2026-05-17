@@ -1,14 +1,14 @@
 from __future__ import annotations
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class CollectionCreate(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     description: str = ""
 
 
 class CollectionUpdate(BaseModel):
-    name: str
+    name: str = Field(min_length=1)
     description: str = ""
 
 

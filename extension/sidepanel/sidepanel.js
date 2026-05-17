@@ -22,7 +22,7 @@ async function checkDaemon() {
 async function loadCollections() {
   try {
     collections = await api.listCollections();
-    renderCollections();
+    renderCollections($("search").value);
     populateAddSelect();
   } catch {
     // daemon offline — handled by status check
@@ -259,6 +259,7 @@ $("btn-cancel-rename").addEventListener("click", () => {
   $("rename-collection-dialog").close();
   _renamingCollection = null;
 });
+$("rename-collection-dialog").addEventListener("cancel", () => { _renamingCollection = null; });
 
 $("btn-rename-collection").addEventListener("click", () => {
   if (_selectedCollection) openRenameDialog(_selectedCollection);
@@ -300,6 +301,7 @@ $("btn-cancel-delete-collection").addEventListener("click", () => {
   $("delete-collection-dialog").close();
   _deletingCollection = null;
 });
+$("delete-collection-dialog").addEventListener("cancel", () => { _deletingCollection = null; });
 
 $("btn-delete-collection").addEventListener("click", () => {
   if (_selectedCollection) openDeleteCollectionDialog(_selectedCollection);
