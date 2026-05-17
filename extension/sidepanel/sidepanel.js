@@ -264,6 +264,47 @@ $("btn-rename-collection").addEventListener("click", () => {
   if (_selectedCollection) openRenameDialog(_selectedCollection);
 });
 
+// --- Delete collection dialog ---
+let _deletingCollection = null;
+
+function openDeleteCollectionDialog(collection) {
+  _deletingCollection = collection;
+  $("delete-collection-message").innerHTML =
+    `Delete <strong>${escHtml(collection.name)}</strong>?<br>` +
+    `<span style="color:#f87171">This will permanently remove ${collection.bookmark_count} saved page(s).</span>`;
+  $("delete-collection-dialog").showModal();
+}
+
+$("btn-confirm-delete-collection").addEventListener("click", async () => {
+  if (!_deletingCollection) return;
+  const deletedId = _deletingCollection.id;
+  $("btn-confirm-delete-collection").disabled = true;
+  try {
+    await api.deleteCollection(deletedId);
+    $("delete-collection-dialog").close();
+    _deletingCollection = null;
+    if (_selectedCollection?.id === deletedId) {
+      _selectedCollection = null;
+      $("bookmarks-section").style.display = "none";
+      $("collections-section").style.display = "";
+    }
+    await loadCollections();
+  } catch (e) {
+    alert(`Failed to delete collection: ${e.message}`);
+  } finally {
+    $("btn-confirm-delete-collection").disabled = false;
+  }
+});
+
+$("btn-cancel-delete-collection").addEventListener("click", () => {
+  $("delete-collection-dialog").close();
+  _deletingCollection = null;
+});
+
+$("btn-delete-collection").addEventListener("click", () => {
+  if (_selectedCollection) openDeleteCollectionDialog(_selectedCollection);
+});
+
 $("btn-back").addEventListener("click", () => {
   _selectedCollection = null;
   $("bookmarks-section").style.display = "none";
