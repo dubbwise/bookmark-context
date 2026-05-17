@@ -82,6 +82,13 @@ class Database:
         with self._connect() as conn:
             conn.execute("DELETE FROM collections WHERE id = ?", (coll_id,))
 
+    def update_collection(self, coll_id: str, name: str, description: str) -> None:
+        with self._connect() as conn:
+            conn.execute(
+                "UPDATE collections SET name = ?, description = ?, updated_at = ? WHERE id = ?",
+                (name, description, _now(), coll_id),
+            )
+
     def add_bookmark(self, collection_id: str, url: str, title: str) -> str:
         with self._connect() as conn:
             existing = conn.execute(

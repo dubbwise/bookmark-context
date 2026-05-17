@@ -64,3 +64,21 @@ def test_duplicate_url_returns_existing(db: Database):
     id1 = db.add_bookmark(coll_id, "https://example.com", "Example")
     id2 = db.add_bookmark(coll_id, "https://example.com", "Example Again")
     assert id1 == id2
+
+
+def test_update_collection_changes_name_and_description(db: Database):
+    coll_id = db.create_collection("Old Name", "old desc")
+    db.update_collection(coll_id, "New Name", "new desc")
+    coll = db.get_collection(coll_id)
+    assert coll["name"] == "New Name"
+    assert coll["description"] == "new desc"
+
+
+def test_update_collection_changes_updated_at(db: Database):
+    import time
+    coll_id = db.create_collection("Name", "")
+    before = db.get_collection(coll_id)["updated_at"]
+    time.sleep(0.02)
+    db.update_collection(coll_id, "Name", "")
+    after = db.get_collection(coll_id)["updated_at"]
+    assert after > before
