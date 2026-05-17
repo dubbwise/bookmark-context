@@ -1,0 +1,36 @@
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { describe, it, expect, vi } from "vitest";
+import CollectionList from "./CollectionList";
+import type { Collection } from "../types";
+
+const mockCollections: Collection[] = [
+  { id: "1", name: "Research", description: "", created_at: "", updated_at: "", bookmark_count: 3 },
+  { id: "2", name: "Recipes", description: "", created_at: "", updated_at: "", bookmark_count: 0 },
+];
+
+describe("CollectionList", () => {
+  it("renders all collection names", () => {
+    render(<CollectionList collections={mockCollections} searchQuery="" onSelect={vi.fn()} onRename={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.getByText("Research")).toBeInTheDocument();
+    expect(screen.getByText("Recipes")).toBeInTheDocument();
+  });
+
+  it("shows bookmark count", () => {
+    render(<CollectionList collections={mockCollections} searchQuery="" onSelect={vi.fn()} onRename={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.getByText("3 pages")).toBeInTheDocument();
+  });
+
+  it("filters by search query", () => {
+    render(<CollectionList collections={mockCollections} searchQuery="rec" onSelect={vi.fn()} onRename={vi.fn()} onDelete={vi.fn()} />);
+    expect(screen.queryByText("Research")).not.toBeInTheDocument();
+    expect(screen.getByText("Recipes")).toBeInTheDocument();
+  });
+
+  it("calls onSelect when row is clicked", async () => {
+    const onSelect = vi.fn();
+    render(<CollectionList collections={mockCollections} searchQuery="" onSelect={onSelect} onRename={vi.fn()} onDelete={vi.fn()} />);
+    await userEvent.click(screen.getByText("Research"));
+    expect(onSelect).toHaveBeenCalledWith(mockCollections[0]);
+  });
+});

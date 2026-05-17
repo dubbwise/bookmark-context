@@ -1,0 +1,55 @@
+import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+import type { Collection } from "../types";
+
+interface CollectionItemProps {
+  collection: Collection;
+  onSelect: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}
+
+export default function CollectionItem({ collection, onSelect, onRename, onDelete }: CollectionItemProps) {
+  return (
+    <div className="flex items-center rounded-md px-2 py-1.5 mb-0.5 cursor-pointer hover:bg-accent group">
+      <div className="flex-1 min-w-0" onClick={onSelect}>
+        <span className="text-sm font-medium truncate block">
+          <span aria-hidden="true">🗂</span>{" "}
+          <span>{collection.name}</span>
+        </span>
+      </div>
+      <span className="text-[11px] text-muted-foreground mr-1 flex-shrink-0">
+        {collection.bookmark_count} pages
+      </span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6 opacity-0 group-hover:opacity-100 flex-shrink-0"
+            onClick={(e) => e.stopPropagation()}
+            aria-label="Options"
+          >
+            <MoreVertical className="h-3.5 w-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={onRename}>
+            <Pencil className="mr-2 h-3.5 w-3.5" />
+            Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
+            <Trash2 className="mr-2 h-3.5 w-3.5" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
