@@ -1,3 +1,4 @@
+import time
 import pytest
 from pathlib import Path
 from bookmark_context.storage.database import Database
@@ -75,7 +76,6 @@ def test_update_collection_changes_name_and_description(db: Database):
 
 
 def test_update_collection_changes_updated_at(db: Database):
-    import time
     coll_id = db.create_collection("Name", "")
     before = db.get_collection(coll_id)["updated_at"]
     time.sleep(0.02)
