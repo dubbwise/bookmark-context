@@ -177,3 +177,67 @@ dialog input {
 }
 .btn-xs:hover { background: rgba(255,255,255,0.15); }
 .btn-xs.danger:hover { background: rgba(239,68,68,0.2); color: #f87171; }
+
+/* Header icon buttons (✎ 🗑 in bookmarks-section header) */
+.btn-icon {
+  background: none;
+  border: none;
+  color: #64748b;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 5px;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.btn-icon:hover { background: rgba(255,255,255,0.08); color: #e2e8f0; }
+.btn-icon-danger:hover { color: #ef4444; }
+
+/* ⋮ kebab button on collection rows */
+.btn-kebab {
+  background: none;
+  border: none;
+  color: #475569;
+  cursor: pointer;
+  font-size: 15px;
+  padding: 0 4px;
+  line-height: 1;
+  border-radius: 4px;
+  flex-shrink: 0;
+}
+.btn-kebab:hover { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+
+/* Floating kebab dropdown */
+#kebab-menu {
+  position: fixed;
+  background: #1e2235;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 6px;
+  padding: 4px;
+  z-index: 100;
+  min-width: 120px;
+  box-shadow: 0 4px 16px rgba(0,0,0,.5);
+}
+.menu-item {
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 12px;
+}
+.menu-item:hover { background: rgba(255,255,255,0.08); }
+.menu-item-danger { color: #ef4444; }
+.menu-item-danger:hover { background: rgba(239,68,68,0.12); }
+
+/* Danger button for delete-collection dialog */
+.btn-danger {
+  background: #dc2626;
+  border: none;
+  color: white;
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  flex: 1;
+  margin-bottom: 0;
+}
+.btn-danger:hover { background: #b91c1c; }

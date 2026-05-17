@@ -15,7 +15,7 @@
     <input type="text" id="search" placeholder="🔍  Search collections…" autocomplete="off">
   </div>
 
-  <section class="collections-section">
+  <section id="collections-section" class="collections-section">
     <div class="section-header">
       <span class="label">Collections</span>
       <button id="btn-new-collection" class="btn-small">+ New</button>
@@ -28,6 +28,8 @@
     <div class="section-header">
       <button id="btn-back" class="btn-small">← Back</button>
       <span id="selected-collection-name" style="font-weight:600;flex:1;margin-left:8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span>
+      <button id="btn-rename-collection" class="btn-icon" title="Rename collection">✎</button>
+      <button id="btn-delete-collection" class="btn-icon btn-icon-danger" title="Delete collection">🗑</button>
     </div>
     <ul id="bookmarks-list"></ul>
   </section>
@@ -72,6 +74,30 @@
     <div class="dialog-buttons">
       <button id="btn-create-collection" class="btn-primary">Create</button>
       <button id="btn-cancel-dialog" class="btn-secondary">Cancel</button>
+    </div>
+  </dialog>
+
+  <!-- Kebab dropdown menu -->
+  <div id="kebab-menu" style="display:none"></div>
+
+  <!-- Rename collection dialog -->
+  <dialog id="rename-collection-dialog">
+    <h3>Rename Collection</h3>
+    <input type="text" id="rename-collection-name" placeholder="Name" autocomplete="off">
+    <input type="text" id="rename-collection-desc" placeholder="Description (optional)" autocomplete="off">
+    <div class="dialog-buttons">
+      <button id="btn-update-collection" class="btn-primary">Update</button>
+      <button id="btn-cancel-rename" class="btn-secondary">Cancel</button>
+    </div>
+  </dialog>
+
+  <!-- Delete collection dialog -->
+  <dialog id="delete-collection-dialog">
+    <h3>Delete Collection</h3>
+    <p id="delete-collection-message" style="font-size:12px;color:#94a3b8;margin:4px 0 12px"></p>
+    <div class="dialog-buttons">
+      <button id="btn-confirm-delete-collection" class="btn-danger">Delete</button>
+      <button id="btn-cancel-delete-collection" class="btn-secondary">Cancel</button>
     </div>
   </dialog>
 

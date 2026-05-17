@@ -25,6 +25,8 @@ export const api = {
   createCollection: (name, description = "") =>
     request("POST", "/collections", { name, description }),
   deleteCollection: (id) => request("DELETE", `/collections/${id}`),
+  updateCollection: (id, name, description) =>
+    request("PATCH", `/collections/${id}`, { name, description }),
   listBookmarks: (collectionId) =>
     request("GET", `/collections/${collectionId}/bookmarks`),
   addBookmark: (collectionId, url, title, html = null, force = false) =>
