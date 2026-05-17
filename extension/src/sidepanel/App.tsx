@@ -11,6 +11,7 @@ import NewCollectionDialog from "../components/dialogs/NewCollectionDialog";
 import RenameCollectionDialog from "../components/dialogs/RenameCollectionDialog";
 import DeleteCollectionDialog from "../components/dialogs/DeleteCollectionDialog";
 import ScanWarningDialog from "../components/dialogs/ScanWarningDialog";
+import SettingsDrawer from "../components/SettingsDrawer";
 
 export default function App() {
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -21,6 +22,7 @@ export default function App() {
   const [daemonOnline, setDaemonOnline] = useState<boolean | null>(null);
   const [daemonVersion, setDaemonVersion] = useState("");
   const [newCollectionOpen, setNewCollectionOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [renameTarget, setRenameTarget] = useState<Collection | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Collection | null>(null);
   const [scanWarning, setScanWarning] = useState<ScanWarning | null>(null);
@@ -136,7 +138,7 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <Header onNewCollection={() => setNewCollectionOpen(true)} />
+      <Header onNewCollection={() => setNewCollectionOpen(true)} onSettings={() => setSettingsOpen(true)} />
       <SearchBar value={searchQuery} onChange={setSearchQuery} />
 
       {selectedCollection ? (
@@ -191,6 +193,7 @@ export default function App() {
           onForce={handleForceSave}
         />
       )}
+      <SettingsDrawer open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );
 }
