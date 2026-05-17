@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Drawer,
   DrawerContent,
@@ -18,6 +18,7 @@ interface SettingsDrawerProps {
 export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerProps) {
   const [port, setPort] = useState(7331);
   const [saved, setSaved] = useState(false);
+  const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -26,15 +27,21 @@ export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerPro
     });
   }, [open]);
 
+  useEffect(() => () => {
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+  }, []);
+
   async function handleSave() {
+    if (!Number.isInteger(port) || port < 1 || port > 65535) return;
     await chrome.storage.sync.set({ daemonPort: port });
     setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
+    savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
   }
 
   return (
     <Drawer open={open} onOpenChange={onOpenChange}>
-      <DrawerContent>
+      <DrawerContent aria-describedby={undefined}>
         <DrawerHeader>
           <DrawerTitle>Settings</DrawerTitle>
         </DrawerHeader>
