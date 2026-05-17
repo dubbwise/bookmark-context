@@ -21,9 +21,9 @@ describe("typed api wrapper", () => {
   beforeEach(() => vi.clearAllMocks());
 
   it("status() delegates to rawApi.status()", async () => {
-    (rawApi.status as ReturnType<typeof vi.fn>).mockResolvedValue({ ai_backend: "openai" });
+    (rawApi.status as ReturnType<typeof vi.fn>).mockResolvedValue({ status: "ok", version: "0.1.0" });
     const result = await api.status();
-    expect(result.ai_backend).toBe("openai");
+    expect(result.version).toBe("0.1.0");
   });
 
   it("listCollections() returns typed Collection[]", async () => {

@@ -27,5 +27,6 @@ export interface ScanWarning {
 }
 
 export interface DaemonStatus {
-  ai_backend: string;
+  status: string;
+  version: string;
 }

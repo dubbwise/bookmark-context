@@ -19,5 +19,5 @@ export const api = {
     force = false,
   ) => rawApi.addBookmark(collectionId, url, title, html, force) as Promise<Bookmark | ScanWarning>,
   deleteBookmark: (id: string) => rawApi.deleteBookmark(id) as Promise<null>,
-  reindexBookmark: (id: string) => rawApi.reindexBookmark(id) as Promise<null>,
+  reindexBookmark: (id: string) => rawApi.reindexBookmark(id) as Promise<Bookmark>,
 };
