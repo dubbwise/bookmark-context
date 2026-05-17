@@ -1,4 +1,17 @@
 import "@testing-library/jest-dom";
+import { vi } from "vitest";
+
+// jsdom does not implement matchMedia; used by theme system preference
+Object.defineProperty(window, "matchMedia", {
+  writable: true,
+  value: vi.fn().mockImplementation((query: string) => ({
+    matches: query.includes("dark") ? false : true,
+    media: query,
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })),
+});
 
 // jsdom does not implement ResizeObserver; mock it for Radix UI components
 global.ResizeObserver = class ResizeObserver {

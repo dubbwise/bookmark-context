@@ -10,7 +10,7 @@
     "noUnusedParameters": true,
     "baseUrl": ".",
     "paths": { "@/*": ["src/*"] },
-    "types": ["chrome", "vitest/globals"]
+    "types": ["chrome", "vite/client", "vitest/globals"]
   },
   "include": ["src"]
 }

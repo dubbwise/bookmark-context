@@ -1,4 +1,4 @@
-import { MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { Folder, MoreVertical, Pencil, Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,9 +19,9 @@ export default function CollectionItem({ collection, onSelect, onRename, onDelet
   return (
     <div className="flex items-center rounded-md px-2 py-1.5 mb-0.5 cursor-pointer hover:bg-accent group">
       <div className="flex-1 min-w-0" onClick={onSelect}>
-        <span className="text-sm font-medium truncate block">
-          <span aria-hidden="true">🗂</span>{" "}
-          <span>{collection.name}</span>
+        <span className="text-sm font-medium truncate flex items-center gap-2">
+          <Folder className="h-5 w-5 shrink-0 text-muted-foreground" aria-hidden />
+          <span className="font-semibold text-sm truncate">{collection.name}</span>
         </span>
       </div>
       <span className="text-[11px] text-muted-foreground mr-1 flex-shrink-0">
@@ -53,3 +53,8 @@ export default function CollectionItem({ collection, onSelect, onRename, onDelet
     </div>
   );
 }
+// touch
+ 
+// debug-touch
+// t
+

@@ -9,14 +9,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { applyTheme, type Theme } from "@/lib/theme";
 
 interface SettingsDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
+const THEME_OPTIONS: { value: Theme; label: string; id: string }[] = [
+  { value: "light", label: "Light", id: "theme-light" },
+  { value: "dark", label: "Dark", id: "theme-dark" },
+  { value: "system", label: "System", id: "theme-system" },
+];
+
 export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerProps) {
   const [port, setPort] = useState(7331);
+  const [theme, setTheme] = useState<Theme>("dark");
   const [saved, setSaved] = useState(false);
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -25,8 +34,13 @@ export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerPro
       setSaved(false);
       return;
     }
-    chrome.storage.sync.get("daemonPort").then(({ daemonPort = 7331 }) => {
-      setPort(daemonPort);
+    chrome.storage.sync.get({ daemonPort: 7331, theme: "dark" }).then(({ daemonPort, theme: stored }) => {
+      setPort(daemonPort ?? 7331);
+      if (stored === "light" || stored === "dark" || stored === "system") {
+        setTheme(stored);
+      } else {
+        setTheme("dark");
+      }
     });
   }, [open]);
 
@@ -36,7 +50,8 @@ export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerPro
 
   async function handleSave() {
     if (!Number.isInteger(port) || port < 1 || port > 65535) return;
-    await chrome.storage.sync.set({ daemonPort: port });
+    await chrome.storage.sync.set({ daemonPort: port, theme });
+    applyTheme(theme);
     setSaved(true);
     if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
     savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
@@ -59,6 +74,19 @@ export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerPro
               value={port}
               onChange={(e) => setPort(Number(e.target.value))}
             />
+          </div>
+          <div className="space-y-2">
+            <Label>Theme</Label>
+            <RadioGroup value={theme} onValueChange={(v) => setTheme(v as Theme)} className="space-y-2">
+              {THEME_OPTIONS.map(({ value, label, id }) => (
+                <div key={value} className="flex items-center gap-2">
+                  <RadioGroupItem value={value} id={id} />
+                  <Label htmlFor={id} className="font-normal cursor-pointer">
+                    {label}
+                  </Label>
+                </div>
+              ))}
+            </RadioGroup>
           </div>
         </div>
         <DrawerFooter>

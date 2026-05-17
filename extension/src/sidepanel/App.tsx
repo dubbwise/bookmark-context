@@ -18,6 +18,7 @@ export default function App() {
   const [selectedCollection, setSelectedCollection] = useState<Collection | null>(null);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
   const [currentTab, setCurrentTab] = useState<{ title: string; url: string } | null>(null);
   const [daemonOnline, setDaemonOnline] = useState<boolean | null>(null);
   const [daemonVersion, setDaemonVersion] = useState("");
@@ -71,8 +72,17 @@ export default function App() {
   }, [selectedCollection]);
 
   async function handleSelectCollection(coll: Collection) {
+    setSearchOpen(false);
+    setSearchQuery("");
     setSelectedCollection(coll);
     // useEffect on selectedCollection handles the initial fetch
+  }
+
+  function handleSearchToggle() {
+    setSearchOpen((open) => {
+      if (open) setSearchQuery("");
+      return !open;
+    });
   }
 
   async function handleAddBookmark(collectionId: string, html: string | null) {
@@ -138,14 +148,27 @@ export default function App() {
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">
-      <Header onNewCollection={() => setNewCollectionOpen(true)} onSettings={() => setSettingsOpen(true)} />
-      <SearchBar value={searchQuery} onChange={setSearchQuery} />
+      <Header
+        onNewCollection={() => setNewCollectionOpen(true)}
+        onSettings={() => setSettingsOpen(true)}
+        searchOpen={searchOpen}
+        onSearchToggle={handleSearchToggle}
+        showSearch={!selectedCollection}
+      />
+      {searchOpen && !selectedCollection && (
+        <SearchBar value={searchQuery} onChange={setSearchQuery} autoFocus />
+      )}
 
       {selectedCollection ? (
         <BookmarkList
           collection={selectedCollection}
           bookmarks={bookmarks}
-          onBack={() => { setSelectedCollection(null); setBookmarks([]); }}
+          onBack={() => {
+            setSelectedCollection(null);
+            setBookmarks([]);
+            setSearchOpen(false);
+            setSearchQuery("");
+          }}
           onRename={() => setRenameTarget(selectedCollection)}
           onDelete={() => setDeleteTarget(selectedCollection)}
           onDeleteBookmark={handleDeleteBookmark}

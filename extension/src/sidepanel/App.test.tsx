@@ -1,4 +1,4 @@
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, fireEvent } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 
 vi.mock("../api", () => ({
@@ -27,5 +27,14 @@ describe("App", () => {
   it("renders the status bar", async () => {
     await act(async () => { render(<App />); });
     expect(screen.getByText(/daemon/i)).toBeInTheDocument();
+  });
+
+  it("toggles search field when search button is clicked", async () => {
+    await act(async () => { render(<App />); });
+    expect(screen.queryByPlaceholderText(/search collections/i)).not.toBeInTheDocument();
+    fireEvent.click(screen.getByTitle(/search collections/i));
+    expect(screen.getByPlaceholderText(/search collections/i)).toBeInTheDocument();
+    fireEvent.click(screen.getByTitle(/search collections/i));
+    expect(screen.queryByPlaceholderText(/search collections/i)).not.toBeInTheDocument();
   });
 });

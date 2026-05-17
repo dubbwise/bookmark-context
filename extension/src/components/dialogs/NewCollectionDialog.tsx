@@ -2,9 +2,10 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -41,35 +42,42 @@ export default function NewCollectionDialog({ open, onOpenChange, onCreated }: N
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-72">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>New Collection</DialogTitle>
+          <DialogDescription>
+            Create a collection to organize saved pages.
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-3 py-2">
-          <div>
-            <Label className="text-xs">Collection name</Label>
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="new-collection-name">Name</Label>
             <Input
+              id="new-collection-name"
               placeholder="Collection name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="mt-1 h-8 text-xs"
               autoFocus
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             />
           </div>
-          <div>
-            <Label className="text-xs">Description (optional)</Label>
+          <div className="grid gap-2">
+            <Label htmlFor="new-collection-desc">Description</Label>
             <Input
-              placeholder="Description"
+              id="new-collection-desc"
+              placeholder="Optional description"
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
-              className="mt-1 h-8 text-xs"
             />
           </div>
         </div>
-        <DialogFooter className="gap-2">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button size="sm" onClick={handleCreate} disabled={!name.trim() || saving}>Create</Button>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="button" onClick={handleCreate} disabled={!name.trim() || saving}>
+            Create
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

@@ -2,9 +2,10 @@ import { useState } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { api } from "../../api";
@@ -35,19 +36,22 @@ export default function DeleteCollectionDialog({ open, collection, onOpenChange,
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-72">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Delete Collection</DialogTitle>
+          <DialogDescription>
+            Delete <span className="font-medium text-foreground">{collection.name}</span>? This will
+            permanently remove {collection.bookmark_count} saved page
+            {collection.bookmark_count === 1 ? "" : "s"}.
+          </DialogDescription>
         </DialogHeader>
-        <div className="py-2 text-sm text-muted-foreground">
-          <p>Delete <strong className="text-foreground">{collection.name}</strong>?</p>
-          <p className="mt-1 text-destructive text-xs">
-            This will permanently remove {collection.bookmark_count} saved page(s).
-          </p>
-        </div>
-        <DialogFooter className="gap-2">
-          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button variant="destructive" size="sm" onClick={handleDelete} disabled={deleting}>Delete</Button>
+        <DialogFooter>
+          <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button type="button" variant="destructive" onClick={handleDelete} disabled={deleting}>
+            Delete
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

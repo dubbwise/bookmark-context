@@ -36,8 +36,8 @@ pip install -e .
 2. Click **Load unpacked** → select the `extension/dist/` directory
 3. Pin the extension; click its icon to open the side panel
 
-> From extension folder run dev: `npm run dev`
-> To rebuild the extension after source changes: `cd extension && npm install && npm run build`
+> For day-to-day UI work, use `cd extension && npm run dev` (see [Extension development](#extension-development)).
+> For a one-off production build: `cd extension && npm install && npm run build`
 
 ### 3. Start the daemon
 
@@ -115,3 +115,14 @@ cd extension && npm test
 # Build extension
 cd extension && npm run build
 ```
+
+### Extension development
+
+From `extension/`:
+
+| Command | What it does |
+|---------|----------------|
+| `npm run dev` | Rebuilds `dist/` on save (`vite build --watch`) |
+| `npm run build` | Production build to `dist/` |
+
+**Recommended for Load unpacked:** `npm run dev`, point Chrome at `extension/dist/`, edit files — after each build finishes, use the header **Reload extension** button (or Reload on `chrome://extensions`) to pick up changes. Re-open the side panel after a reload if it closed.
