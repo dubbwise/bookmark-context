@@ -70,8 +70,7 @@ export default function App() {
 
   async function handleSelectCollection(coll: Collection) {
     setSelectedCollection(coll);
-    const bms = await api.listBookmarks(coll.id);
-    setBookmarks(bms);
+    // useEffect on selectedCollection handles the initial fetch
   }
 
   async function handleAddBookmark(collectionId: string, html: string | null) {
@@ -88,10 +87,14 @@ export default function App() {
   async function handleForceSave() {
     if (!pendingSave) return;
     const { collectionId, url, title, html } = pendingSave;
-    setPendingSave(null);
-    setScanWarning(null);
-    await api.addBookmark(collectionId, url, title, html, true);
-    await loadCollections();
+    try {
+      await api.addBookmark(collectionId, url, title, html, true);
+      setPendingSave(null);
+      setScanWarning(null);
+      await loadCollections();
+    } catch (e) {
+      alert(`Failed to save: ${(e as Error).message}`);
+    }
   }
 
   async function handleDeleteBookmark(id: string) {

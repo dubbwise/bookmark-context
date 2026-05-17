@@ -1,3 +1,3 @@
-export default function SearchBar({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+export default function SearchBar(_: { value: string; onChange: (v: string) => void }) {
   return null;
 }

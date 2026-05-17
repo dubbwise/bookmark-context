@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, act } from "@testing-library/react";
 import { describe, it, expect, vi } from "vitest";
 
 vi.mock("../api", () => ({
@@ -20,12 +20,12 @@ import App from "./App";
 
 describe("App", () => {
   it("renders the header with logo text", async () => {
-    render(<App />);
+    await act(async () => { render(<App />); });
     expect(screen.getByText(/Bookmark Context/i)).toBeInTheDocument();
   });
 
   it("renders the status bar", async () => {
-    render(<App />);
+    await act(async () => { render(<App />); });
     expect(screen.getByText(/daemon/i)).toBeInTheDocument();
   });
 });
