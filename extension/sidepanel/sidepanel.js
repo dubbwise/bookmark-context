@@ -30,6 +30,7 @@ async function loadCollections() {
 }
 
 function renderCollections(filter = "") {
+  closeKebabMenu();
   const list = $("collections-list");
   const lower = filter.toLowerCase();
   const visible = filter
@@ -172,7 +173,12 @@ function escHtml(str) {
 let _selectedCollection = null;
 
 $("collections-list").addEventListener("click", async (e) => {
-  if (e.target.closest(".btn-kebab")) return;
+  const btn = e.target.closest(".btn-kebab");
+  if (btn) {
+    const coll = collections.find((c) => c.id === btn.dataset.id);
+    if (coll) openKebabMenu(btn, coll);
+    return;
+  }
   const item = e.target.closest(".collection-item");
   if (!item) return;
   _selectedCollection = collections.find((c) => c.id === item.dataset.id) || null;
@@ -180,13 +186,6 @@ $("collections-list").addEventListener("click", async (e) => {
   await renderBookmarks();
   $("collections-section").style.display = "none";
   $("bookmarks-section").style.display = "";
-});
-
-$("collections-list").addEventListener("click", (e) => {
-  const btn = e.target.closest(".btn-kebab");
-  if (!btn) return;
-  const coll = collections.find((c) => c.id === btn.dataset.id);
-  if (coll) openKebabMenu(btn, coll);
 });
 
 function openKebabMenu(anchor, collection) {
