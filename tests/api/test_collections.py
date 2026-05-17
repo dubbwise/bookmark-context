@@ -49,3 +49,27 @@ async def test_delete_collection(client):
 async def test_delete_nonexistent_collection_returns_404(client):
     response = await client.delete("/collections/does-not-exist")
     assert response.status_code == 404
+
+
+async def test_rename_collection_returns_updated_fields(client):
+    r = await client.post("/collections", json={"name": "Old", "description": "old"})
+    coll_id = r.json()["id"]
+    response = await client.patch(f"/collections/{coll_id}", json={"name": "New", "description": "new"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["name"] == "New"
+    assert data["description"] == "new"
+    assert data["id"] == coll_id
+
+
+async def test_rename_collection_returns_404_for_missing(client):
+    response = await client.patch("/collections/does-not-exist", json={"name": "X"})
+    assert response.status_code == 404
+
+
+async def test_rename_collection_includes_bookmark_count(client):
+    r = await client.post("/collections", json={"name": "Coll", "description": ""})
+    coll_id = r.json()["id"]
+    response = await client.patch(f"/collections/{coll_id}", json={"name": "Renamed"})
+    assert response.status_code == 200
+    assert response.json()["bookmark_count"] == 0

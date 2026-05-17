@@ -1,7 +1,7 @@
 from __future__ import annotations
 from fastapi import APIRouter, Request, HTTPException
 from starlette.responses import Response
-from bookmark_context.api.schemas import CollectionCreate, CollectionResponse
+from bookmark_context.api.schemas import CollectionCreate, CollectionResponse, CollectionUpdate
 
 router = APIRouter(prefix="/collections", tags=["collections"])
 
@@ -17,6 +17,17 @@ def create_collection(body: CollectionCreate, request: Request):
     coll_id = db.create_collection(body.name, body.description)
     coll = db.get_collection(coll_id)
     return CollectionResponse(**coll, bookmark_count=0)
+
+
+@router.patch("/{collection_id}", response_model=CollectionResponse)
+def rename_collection(collection_id: str, body: CollectionUpdate, request: Request):
+    db = request.app.state.db
+    if not db.get_collection(collection_id):
+        raise HTTPException(status_code=404, detail="Collection not found")
+    db.update_collection(collection_id, body.name, body.description)
+    coll = db.get_collection(collection_id)
+    count = len(db.list_bookmarks(collection_id))
+    return CollectionResponse(**coll, bookmark_count=count)
 
 
 @router.delete("/{collection_id}", status_code=204)

@@ -7,6 +7,11 @@ class CollectionCreate(BaseModel):
     description: str = ""
 
 
+class CollectionUpdate(BaseModel):
+    name: str
+    description: str = ""
+
+
 class CollectionResponse(BaseModel):
     id: str
     name: str
