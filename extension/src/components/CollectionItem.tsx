@@ -27,25 +27,24 @@ export default function CollectionItem({ collection, onSelect, onRename, onDelet
       <span className="text-[11px] text-muted-foreground mr-1 flex-shrink-0">
         {collection.bookmark_count} pages
       </span>
-      <DropdownMenu>
+      <DropdownMenu modal={false}>
         <DropdownMenuTrigger asChild>
           <Button
             variant="ghost"
             size="icon"
-            className="h-6 w-6 opacity-0 group-hover:opacity-100 flex-shrink-0"
-            onClick={(e) => e.stopPropagation()}
+            className="h-6 w-6 shrink-0 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
             aria-label="Options"
           >
             <MoreVertical className="h-3.5 w-3.5" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={onRename}>
-            <Pencil className="mr-2 h-3.5 w-3.5" />
+        <DropdownMenuContent align="end" className="w-40">
+          <DropdownMenuItem onSelect={onRename}>
+            <Pencil className="h-3.5 w-3.5" />
             Rename
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={onDelete} className="text-destructive focus:text-destructive">
-            <Trash2 className="mr-2 h-3.5 w-3.5" />
+          <DropdownMenuItem variant="destructive" onSelect={onDelete}>
+            <Trash2 className="h-3.5 w-3.5" />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
@@ -53,8 +52,4 @@ export default function CollectionItem({ collection, onSelect, onRename, onDelet
     </div>
   );
 }
-// touch
- 
-// debug-touch
-// t
 

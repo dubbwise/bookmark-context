@@ -68,25 +68,27 @@ export default function CurrentPage({ currentTab, collections, onAdd }: CurrentP
             {currentTab?.url || "—"}
           </p>
         </div>
-        <Select value={selectedCollectionId} onValueChange={setSelectedCollectionId}>
-          <SelectTrigger className="h-8 text-xs">
-            <SelectValue placeholder="Select collection…" />
-          </SelectTrigger>
-          <SelectContent>
-            {collections.map((c) => (
-              <SelectItem key={c.id} value={c.id} className="text-xs">
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Button
-          className="w-full h-8 text-xs"
-          disabled={!selectedCollectionId || adding || added}
-          onClick={handleAdd}
-        >
-          {added ? "✓ Added" : adding ? "Adding…" : "+ Add to collection"}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select value={selectedCollectionId} onValueChange={setSelectedCollectionId}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Select collection…" />
+            </SelectTrigger>
+            <SelectContent>
+              {collections.map((c) => (
+                <SelectItem key={c.id} value={c.id} className="text-xs">
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button
+            className="w-full h-8 text-xs"
+            disabled={!selectedCollectionId || adding || added}
+            onClick={handleAdd}
+          >
+            {added ? "✓ Added" : adding ? "Adding…" : "+ Add to collection"}
+          </Button>
+        </div>
       </section>
     </>
   );

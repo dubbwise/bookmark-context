@@ -33,4 +33,21 @@ describe("CollectionList", () => {
     await userEvent.click(screen.getByText("Research"));
     expect(onSelect).toHaveBeenCalledWith(mockCollections[0]);
   });
+
+  it("opens options menu and calls onRename", async () => {
+    const user = userEvent.setup();
+    const onRename = vi.fn();
+    render(
+      <CollectionList
+        collections={mockCollections}
+        searchQuery=""
+        onSelect={vi.fn()}
+        onRename={onRename}
+        onDelete={vi.fn()}
+      />,
+    );
+    await user.click(screen.getAllByLabelText("Options")[0]);
+    await user.click(screen.getByRole("menuitem", { name: /rename/i }));
+    expect(onRename).toHaveBeenCalledWith(mockCollections[0]);
+  });
 });
