@@ -21,7 +21,10 @@ export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerPro
   const savedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      setSaved(false);
+      return;
+    }
     chrome.storage.sync.get("daemonPort").then(({ daemonPort = 7331 }) => {
       setPort(daemonPort);
     });
@@ -40,7 +43,7 @@ export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerPro
   }
 
   return (
-    <Drawer open={open} onOpenChange={onOpenChange}>
+    <Drawer open={open} onOpenChange={onOpenChange} shouldScaleBackground={false}>
       <DrawerContent aria-describedby={undefined}>
         <DrawerHeader>
           <DrawerTitle>Settings</DrawerTitle>
