@@ -40,6 +40,7 @@ function renderCollections(filter = "") {
       (c) => `<li class="collection-item" data-id="${c.id}">
         <span class="collection-name">🗂 ${escHtml(c.name)}</span>
         <span class="collection-count">${c.bookmark_count} pages</span>
+        <button class="btn-kebab" data-id="${c.id}" title="Options">⋮</button>
       </li>`
     )
     .join("");
@@ -168,29 +169,66 @@ function escHtml(str) {
 }
 
 // --- Bookmark list view ---
-let selectedCollectionId = null;
+let _selectedCollection = null;
 
 $("collections-list").addEventListener("click", async (e) => {
+  if (e.target.closest(".btn-kebab")) return;
   const item = e.target.closest(".collection-item");
   if (!item) return;
-  selectedCollectionId = item.dataset.id;
-  const coll = collections.find((c) => c.id === selectedCollectionId);
-  $("selected-collection-name").textContent = coll?.name || "";
+  _selectedCollection = collections.find((c) => c.id === item.dataset.id) || null;
+  $("selected-collection-name").textContent = _selectedCollection?.name || "";
   await renderBookmarks();
   $("collections-section").style.display = "none";
   $("bookmarks-section").style.display = "";
 });
 
+$("collections-list").addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn-kebab");
+  if (!btn) return;
+  const coll = collections.find((c) => c.id === btn.dataset.id);
+  if (coll) openKebabMenu(btn, coll);
+});
+
+function openKebabMenu(anchor, collection) {
+  const menu = $("kebab-menu");
+  menu.innerHTML = `
+    <div class="menu-item" data-action="rename">✎ Rename</div>
+    <div class="menu-item menu-item-danger" data-action="delete">🗑 Delete</div>
+  `;
+  const rect = anchor.getBoundingClientRect();
+  menu.style.top = (rect.bottom + 4) + "px";
+  menu.style.right = (document.documentElement.clientWidth - rect.right) + "px";
+  menu.style.display = "block";
+  menu.querySelector("[data-action='rename']").onclick = () => {
+    closeKebabMenu();
+    openRenameDialog(collection);
+  };
+  menu.querySelector("[data-action='delete']").onclick = () => {
+    closeKebabMenu();
+    openDeleteCollectionDialog(collection);
+  };
+}
+
+function closeKebabMenu() {
+  $("kebab-menu").style.display = "none";
+}
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest("#kebab-menu") && !e.target.closest(".btn-kebab")) {
+    closeKebabMenu();
+  }
+});
+
 $("btn-back").addEventListener("click", () => {
-  selectedCollectionId = null;
+  _selectedCollection = null;
   $("bookmarks-section").style.display = "none";
   $("collections-section").style.display = "";
   loadCollections();
 });
 
 async function renderBookmarks() {
-  if (!selectedCollectionId) return;
-  const bookmarks = await api.listBookmarks(selectedCollectionId);
+  if (!_selectedCollection) return;
+  const bookmarks = await api.listBookmarks(_selectedCollection.id);
   const list = $("bookmarks-list");
   if (!bookmarks.length) {
     list.innerHTML = '<li style="padding:12px 8px;color:#64748b;font-size:12px">No bookmarks yet. Add pages using the right-click menu or the panel below.</li>';
@@ -229,7 +267,7 @@ $("bookmarks-list").addEventListener("click", async (e) => {
 
 // Poll indexing status when bookmark list is visible
 setInterval(async () => {
-  if (selectedCollectionId && $("bookmarks-section").style.display !== "none") {
+  if (_selectedCollection && $("bookmarks-section").style.display !== "none") {
     await renderBookmarks();
   }
 }, 3000);
