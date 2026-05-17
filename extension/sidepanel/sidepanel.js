@@ -218,6 +218,49 @@ document.addEventListener("click", (e) => {
   }
 });
 
+// --- Rename collection dialog ---
+let _renamingCollection = null;
+
+function openRenameDialog(collection) {
+  _renamingCollection = collection;
+  $("rename-collection-name").value = collection.name;
+  $("rename-collection-desc").value = collection.description || "";
+  $("rename-collection-dialog").showModal();
+  $("rename-collection-name").focus();
+  $("rename-collection-name").select();
+}
+
+$("btn-update-collection").addEventListener("click", async () => {
+  const name = $("rename-collection-name").value.trim();
+  if (!name || !_renamingCollection) return;
+  const updatedId = _renamingCollection.id;
+  try {
+    await api.updateCollection(
+      updatedId,
+      name,
+      $("rename-collection-desc").value.trim(),
+    );
+    $("rename-collection-dialog").close();
+    _renamingCollection = null;
+    await loadCollections();
+    if (_selectedCollection?.id === updatedId) {
+      _selectedCollection.name = name;
+      $("selected-collection-name").textContent = name;
+    }
+  } catch (e) {
+    alert(`Failed to rename: ${e.message}`);
+  }
+});
+
+$("btn-cancel-rename").addEventListener("click", () => {
+  $("rename-collection-dialog").close();
+  _renamingCollection = null;
+});
+
+$("btn-rename-collection").addEventListener("click", () => {
+  if (_selectedCollection) openRenameDialog(_selectedCollection);
+});
+
 $("btn-back").addEventListener("click", () => {
   _selectedCollection = null;
   $("bookmarks-section").style.display = "none";
