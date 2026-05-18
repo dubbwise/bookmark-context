@@ -46,7 +46,7 @@ export default function NewCollectionDialog({ open, onOpenChange, onCreated }: N
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
-          <DialogTitle>New Collection</DialogTitle>
+          <DialogTitle>New collection</DialogTitle>
           <DialogDescription>
             Create a collection to organize saved pages.
           </DialogDescription>
@@ -73,7 +73,7 @@ export default function NewCollectionDialog({ open, onOpenChange, onCreated }: N
             />
           </Field>
         </FieldGroup>
-        <DialogFooter>
+        <DialogFooter className="flex-row">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>

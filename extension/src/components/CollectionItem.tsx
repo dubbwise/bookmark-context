@@ -1,4 +1,4 @@
-import { Folder, MoreVertical, Pencil } from "lucide-react";
+import { Album, MoreVertical, Pencil } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,7 +36,7 @@ export default function CollectionItem({
       onClick={onSelect}
     >
       <ItemMedia variant="icon">
-        <Folder />
+        <Album />
       </ItemMedia>
       <ItemContent>
         <ItemTitle>{collection.name}</ItemTitle>

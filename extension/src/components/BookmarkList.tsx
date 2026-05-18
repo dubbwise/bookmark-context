@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Bookmark, Pencil, RotateCcw, Trash2 } from "lucide-react";
+import { ArrowLeft, Bookmark, Pencil, Repeat, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -82,14 +82,14 @@ export default function BookmarkList({
 
   return (
     <section className="flex min-w-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center space-x-2 pl-3 pr-4 py-1.5">
+      <header className="flex shrink-0 items-center space-x-2 pl-2.5 pr-4 py-1.5">
         <div className="mr-auto flex items-center space-x-1">
           <Button variant="ghost" size="icon-sm" onClick={onBack} aria-label="Back">
             <ArrowLeft />
           </Button>
-          <div className="flex flex-col">
-            <div className="ml-1 min-w-0 flex-1 truncate font-medium">{collection.name}</div>
-            <div className="ml-1 min-w-0 flex-1 truncate text-xs text-muted-foreground">{collection.description}</div>
+          <div className="flex flex-col space-y-0 ml-2">
+            <span className="truncate text-sm font-medium">{collection.name}</span>
+            <span className="truncate text-xs text-muted-foreground">{collection.description}</span>
           </div>
         </div>
         <Button
@@ -109,11 +109,11 @@ export default function BookmarkList({
               size="icon-sm"
               className="text-muted-foreground"
               disabled={reindexing}
-              onClick={() => void handleReindexSelected()}
-              title={`Re-index ${selectedCount} selected`}
-              aria-label={`Re-index ${selectedCount} selected bookmarks`}
+              onClick={() => onRequestRemoveSelected([...selectedIds])}
+              title={`Remove ${selectedCount} selected`}
+              aria-label={`Remove ${selectedCount} selected bookmarks`}
             >
-              <RotateCcw className={reindexing ? "animate-spin" : undefined} />
+              <Trash2 />
             </Button>
             <Button
               type="button"
@@ -121,11 +121,11 @@ export default function BookmarkList({
               size="icon-sm"
               className="text-muted-foreground"
               disabled={reindexing}
-              onClick={() => onRequestRemoveSelected([...selectedIds])}
-              title={`Remove ${selectedCount} selected`}
-              aria-label={`Remove ${selectedCount} selected bookmarks`}
+              onClick={() => void handleReindexSelected()}
+              title={`Re-index ${selectedCount} selected`}
+              aria-label={`Re-index ${selectedCount} selected bookmarks`}
             >
-              <Trash2 />
+              <Repeat className={reindexing ? "animate-spin" : undefined} />
             </Button>
           </>
         ) : null}
@@ -141,7 +141,7 @@ export default function BookmarkList({
             />
           </div>
         ) : null}
-      </div>
+      </header>
       <Separator />
       <ScrollArea className="px-2 py-2">
         {bookmarks.length === 0 ? (

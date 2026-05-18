@@ -7,6 +7,7 @@ import CollectionList from "../components/CollectionList";
 import BookmarkList from "../components/BookmarkList";
 import AddToCollection from "../components/AddToCollection";
 import StatusBar from "../components/StatusBar";
+import ThemeDemoView from "../components/ThemeDemoView";
 import AppDialogs, { type RemoveBookmarksRequest } from "../components/dialogs/AppDialogs";
 import SettingsDrawer from "../components/SettingsDrawer";
 import { toast } from "@/lib/toast";
@@ -23,6 +24,7 @@ export default function App() {
   const [daemonVersion, setDaemonVersion] = useState("");
   const [newCollectionOpen, setNewCollectionOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [themeDemoOpen, setThemeDemoOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Collection | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Collection | null>(null);
   const [removeBookmarks, setRemoveBookmarks] = useState<RemoveBookmarksRequest | null>(null);
@@ -206,7 +208,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen min-w-0 flex-col overflow-hidden">
+    <div className="flex h-screen min-w-0 flex-col overflow-hidden testttt">
       <Header
         onNewCollection={() => setNewCollectionOpen(true)}
         onSettings={() => setSettingsOpen(true)}
@@ -214,11 +216,13 @@ export default function App() {
         onSearchToggle={handleSearchToggle}
         showSearch={!selectedCollection}
       />
-      {searchOpen && !selectedCollection && (
+      {searchOpen && !selectedCollection && !themeDemoOpen && (
         <SearchBar value={searchQuery} onChange={setSearchQuery} autoFocus />
       )}
 
-      {selectedCollection ? (
+      {themeDemoOpen ? (
+        <ThemeDemoView onBack={() => setThemeDemoOpen(false)} />
+      ) : selectedCollection ? (
         <BookmarkList
           collection={selectedCollection}
           bookmarks={bookmarks}
@@ -248,16 +252,22 @@ export default function App() {
         />
       )}
 
-      <AddToCollection
-        currentTab={currentTab}
-        collections={collections}
-        activeCollectionId={selectedCollection?.id ?? null}
-        scanWarning={
-          scanWarning && pendingSave?.url === currentTab?.url ? scanWarning : null
-        }
-        onAdd={handleAddBookmark}
+      {!themeDemoOpen && (
+        <AddToCollection
+          currentTab={currentTab}
+          collections={collections}
+          activeCollectionId={selectedCollection?.id ?? null}
+          scanWarning={
+            scanWarning && pendingSave?.url === currentTab?.url ? scanWarning : null
+          }
+          onAdd={handleAddBookmark}
+        />
+      )}
+      <StatusBar
+        online={daemonOnline}
+        backend={daemonVersion}
+        onOpenThemeDemo={() => setThemeDemoOpen(true)}
       />
-      <StatusBar online={daemonOnline} backend={daemonVersion} />
 
       <AppDialogs
         newCollectionOpen={newCollectionOpen}
