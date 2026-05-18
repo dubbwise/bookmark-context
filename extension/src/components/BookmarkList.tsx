@@ -1,17 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { ArrowLeft, Bookmark, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, Bookmark, Pencil, RotateCcw, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Spinner } from "@/components/ui/spinner";
+import { Separator } from "@/components/ui/separator";
 import {
   Empty,
   EmptyDescription,
@@ -28,8 +20,10 @@ interface BookmarkListProps {
   bookmarks: BookmarkType[];
   onBack: () => void;
   onEdit: () => void;
-  onDeleteBookmarks: (ids: string[]) => void | Promise<void>;
-  onReindex: (id: string) => void;
+  onRequestRemoveSelected: (ids: string[]) => void;
+  onReindexBookmarks: (ids: string[]) => void | Promise<void>;
+  /** Incremented after a successful bulk remove so selection clears. */
+  clearSelectionToken?: number;
 }
 
 export default function BookmarkList({
@@ -37,17 +31,22 @@ export default function BookmarkList({
   bookmarks,
   onBack,
   onEdit,
-  onDeleteBookmarks,
-  onReindex,
+  onRequestRemoveSelected,
+  onReindexBookmarks,
+  clearSelectionToken = 0,
 }: BookmarkListProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
-  const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
-  const [removing, setRemoving] = useState(false);
+  const [reindexing, setReindexing] = useState(false);
 
   useEffect(() => {
     const valid = new Set(bookmarks.map((b) => b.id));
     setSelectedIds((prev) => new Set([...prev].filter((id) => valid.has(id))));
   }, [bookmarks]);
+
+  useEffect(() => {
+    if (clearSelectionToken === 0) return;
+    setSelectedIds(new Set());
+  }, [clearSelectionToken]);
 
   const setSelected = useCallback((id: string, selected: boolean) => {
     setSelectedIds((prev) => {
@@ -68,28 +67,31 @@ export default function BookmarkList({
       ? "indeterminate"
       : false;
 
-  async function handleConfirmRemoveSelected() {
+  async function handleReindexSelected() {
     const ids = [...selectedIds];
     if (ids.length === 0) return;
-    setRemoving(true);
+    setReindexing(true);
     try {
-      await onDeleteBookmarks(ids);
-      setSelectedIds(new Set());
-      setConfirmRemoveOpen(false);
+      await onReindexBookmarks(ids);
     } catch {
       /* parent toasts on failure */
     } finally {
-      setRemoving(false);
+      setReindexing(false);
     }
   }
 
   return (
     <section className="flex min-w-0 flex-1 flex-col">
-      <div className="flex shrink-0 items-center gap-1 px-2 py-1.5">
-        <Button variant="ghost" size="icon-sm" onClick={onBack} aria-label="Back">
-          <ArrowLeft />
-        </Button>
-        <span className="ml-1 min-w-0 flex-1 truncate text-lg font-semibold">{collection.name}</span>
+      <div className="flex shrink-0 items-center space-x-2 pl-3 pr-4 py-1.5">
+        <div className="mr-auto flex items-center space-x-1">
+          <Button variant="ghost" size="icon-sm" onClick={onBack} aria-label="Back">
+            <ArrowLeft />
+          </Button>
+          <div className="flex flex-col">
+            <div className="ml-1 min-w-0 flex-1 truncate font-medium">{collection.name}</div>
+            <div className="ml-1 min-w-0 flex-1 truncate text-xs text-muted-foreground">{collection.description}</div>
+          </div>
+        </div>
         <Button
           variant="ghost"
           size="icon-sm"
@@ -100,17 +102,32 @@ export default function BookmarkList({
           <Pencil />
         </Button>
         {selectedCount > 0 ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon-sm"
-            className="text-muted-foreground hover:text-destructive"
-            onClick={() => setConfirmRemoveOpen(true)}
-            title={`Remove ${selectedCount} selected`}
-            aria-label={`Remove ${selectedCount} selected bookmarks`}
-          >
-            <Trash2 />
-          </Button>
+          <>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              disabled={reindexing}
+              onClick={() => void handleReindexSelected()}
+              title={`Re-index ${selectedCount} selected`}
+              aria-label={`Re-index ${selectedCount} selected bookmarks`}
+            >
+              <RotateCcw className={reindexing ? "animate-spin" : undefined} />
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="text-muted-foreground"
+              disabled={reindexing}
+              onClick={() => onRequestRemoveSelected([...selectedIds])}
+              title={`Remove ${selectedCount} selected`}
+              aria-label={`Remove ${selectedCount} selected bookmarks`}
+            >
+              <Trash2 />
+            </Button>
+          </>
         ) : null}
         {n > 0 ? (
           <div className="flex shrink-0 items-center px-0.5" onClick={(e) => e.stopPropagation()}>
@@ -125,6 +142,7 @@ export default function BookmarkList({
           </div>
         ) : null}
       </div>
+      <Separator />
       <ScrollArea className="px-2 py-2">
         {bookmarks.length === 0 ? (
           <div className="py-6">
@@ -148,37 +166,11 @@ export default function BookmarkList({
                 bookmark={b}
                 selected={selectedIds.has(b.id)}
                 onSelectChange={(sel) => setSelected(b.id, sel)}
-                onReindex={() => onReindex(b.id)}
               />
             ))}
           </ItemGroup>
         )}
       </ScrollArea>
-      <Dialog open={confirmRemoveOpen} onOpenChange={setConfirmRemoveOpen}>
-        <DialogContent showCloseButton={false}>
-          <DialogHeader>
-            <DialogTitle>Remove selected bookmarks?</DialogTitle>
-            <DialogDescription>
-              Permanently remove {selectedCount} saved page{selectedCount === 1 ? "" : "s"} from{" "}
-              <span className="font-medium text-foreground">{collection.name}</span>. This cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => setConfirmRemoveOpen(false)} disabled={removing}>
-              Cancel
-            </Button>
-            <Button
-              type="button"
-              variant="destructive"
-              disabled={removing}
-              onClick={() => void handleConfirmRemoveSelected()}
-            >
-              {removing && <Spinner data-icon="inline-start" />}
-              Remove
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }

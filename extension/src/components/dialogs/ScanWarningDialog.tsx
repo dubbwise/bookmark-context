@@ -15,17 +15,30 @@ import type { ScanWarning } from "../../types";
 interface ScanWarningDialogProps {
   open: boolean;
   warning: ScanWarning;
+  onOpenChange: (open: boolean) => void;
   onDiscard: () => void;
   onForce: () => void;
 }
 
-export default function ScanWarningDialog({ open, warning, onDiscard, onForce }: ScanWarningDialogProps) {
+export default function ScanWarningDialog({
+  open,
+  warning,
+  onOpenChange,
+  onDiscard,
+  onForce,
+}: ScanWarningDialogProps) {
   const [showDetails, setShowDetails] = useState(false);
   const unscannable = warning.signals.includes("content_unscannable");
 
   return (
-    <Dialog open={open} onOpenChange={(o) => { if (!o) onDiscard(); }}>
-      <DialogContent>
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) onDiscard();
+        onOpenChange(o);
+      }}
+    >
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>
             {unscannable ? "Could not scan page" : "Suspicious content detected"}

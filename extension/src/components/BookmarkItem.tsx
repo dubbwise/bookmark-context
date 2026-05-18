@@ -1,5 +1,3 @@
-import { RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -31,21 +29,24 @@ const STATUS_VARIANT: Record<
   error: "destructive",
 };
 
+/** Hide badge once indexed; show while queued, in progress, or failed. */
+function shouldShowIndexStatus(status: Bookmark["index_status"]): boolean {
+  return status !== "done";
+}
+
 interface BookmarkItemProps {
   bookmark: Bookmark;
   selected: boolean;
   onSelectChange: (selected: boolean) => void;
-  onReindex: () => void;
 }
 
 export default function BookmarkItem({
   bookmark,
   selected,
   onSelectChange,
-  onReindex,
 }: BookmarkItemProps) {
   return (
-    <Item size="xs" variant="default" className="grid grid-cols-[auto_1fr_auto]">
+    <Item size="xs" variant="default" className="grid grid-cols-[auto_1fr_auto] items-start">
       <ItemMedia variant="image">
         <Favicon
           url={bookmark.url}
@@ -54,33 +55,39 @@ export default function BookmarkItem({
         />
       </ItemMedia>
       <ItemContent className="w-full">
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-between space-x-2">
           <ItemTitle className="">{bookmark.title || bookmark.url}</ItemTitle>
-          <Badge
-            variant={STATUS_VARIANT[bookmark.index_status]}
-            className="max-w-[calc(100%-4rem)] shrink truncate"
-          >
-            <Button
-              variant="ghost"
-              size="icon-xs"
-              className="text-muted-foreground"
-              onClick={onReindex}
-              title="Re-index"
+          {shouldShowIndexStatus(bookmark.index_status) ? (
+            <Badge
+              variant={STATUS_VARIANT[bookmark.index_status]}
+              className="shrink truncate"
             >
-              <RotateCcw />
-            </Button>
-            {STATUS_LABELS[bookmark.index_status]}
-          </Badge>
+              {STATUS_LABELS[bookmark.index_status]}
+            </Badge>
+          ) : null}
         </div>
-        <ItemDescription className="truncate text-ellipsis">{bookmark.url}</ItemDescription>
+        <ItemDescription className="">
+          <div className="overflow-hidden text-ellipsis line-clamp-1">
+            <a
+              href={bookmark.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="no-underline! hover:underline! hover:text-muted-foreground!"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {bookmark.url}
+            </a>
+          </div>
+        </ItemDescription>
       </ItemContent>
       <ItemFooter>
-        <ItemActions className="gap-1">
-          <div className="flex items-center px-0.5" onClick={(e) => e.stopPropagation()}>
+        <ItemActions>
+          <div onClick={(e) => e.stopPropagation()}>
             <Checkbox
               checked={selected}
               onCheckedChange={(v) => onSelectChange(v === true)}
               aria-label={`Select ${bookmark.title || bookmark.url}`}
+              className="bg-white"
             />
           </div>
         </ItemActions>

@@ -13,11 +13,12 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Spinner } from "@/components/ui/spinner";
 import { api } from "../../api";
 import { toast } from "@/lib/toast";
+import { destructiveDialogFooterClass } from "./dialog-layout";
 import type { Collection } from "../../types";
 
 interface DeleteCollectionDialogProps {
   open: boolean;
-  collection: Collection;
+  collection: Collection | null;
   onOpenChange: (open: boolean) => void;
   onDeleted: (id: string) => void;
 }
@@ -25,11 +26,13 @@ interface DeleteCollectionDialogProps {
 export default function DeleteCollectionDialog({ open, collection, onOpenChange, onDeleted }: DeleteCollectionDialogProps) {
   const [confirmName, setConfirmName] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const nameMatches = confirmName === collection.name;
+  const nameMatches = collection !== null && confirmName === collection.name;
 
   useEffect(() => {
     if (open) setConfirmName("");
-  }, [open, collection.id]);
+  }, [open, collection?.id]);
+
+  if (!collection) return null;
 
   async function handleDelete() {
     if (!nameMatches) return;
@@ -69,13 +72,12 @@ export default function DeleteCollectionDialog({ open, collection, onOpenChange,
             className="ring-1 ring-destructive focus-visible:border-destructive focus-visible:ring-destructive/20"
           />
         </Field>
-        <DialogFooter className="flex flex-row justify-between">
+        <DialogFooter className={destructiveDialogFooterClass}>
           <Button
             type="button"
             variant="destructive"
             disabled={deleting || !nameMatches}
             onClick={() => void handleDelete()}
-            className="mr-auto"
           >
             {deleting && <Spinner data-icon="inline-start" />}
             Delete

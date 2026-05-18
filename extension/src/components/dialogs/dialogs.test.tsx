@@ -5,6 +5,7 @@ import NewCollectionDialog from "./NewCollectionDialog";
 import EditCollectionDialog from "./EditCollectionDialog";
 import DeleteCollectionDialog from "./DeleteCollectionDialog";
 import ScanWarningDialog from "./ScanWarningDialog";
+import RemoveBookmarksDialog from "./RemoveBookmarksDialog";
 import type { Collection, ScanWarning } from "../../types";
 
 vi.mock("../../api", () => ({
@@ -59,11 +60,31 @@ describe("DeleteCollectionDialog", () => {
   });
 });
 
+describe("RemoveBookmarksDialog", () => {
+  it("shows count and calls onConfirm", async () => {
+    const user = userEvent.setup();
+    const onConfirm = vi.fn().mockResolvedValue(undefined);
+    render(
+      <RemoveBookmarksDialog
+        open={true}
+        collectionName="Research"
+        count={2}
+        onOpenChange={vi.fn()}
+        onConfirm={onConfirm}
+      />,
+    );
+    await user.click(screen.getByRole("button", { name: /^remove$/i }));
+    expect(onConfirm).toHaveBeenCalled();
+  });
+});
+
 describe("ScanWarningDialog", () => {
   const warning: ScanWarning = { status: "scan_warning", risk_score: 0.85, signals: ["xss"], matches: ["<script>alert(1)</script>"] };
 
   it("shows risk score", () => {
-    render(<ScanWarningDialog open={true} warning={warning} onDiscard={vi.fn()} onForce={vi.fn()} />);
+    render(
+      <ScanWarningDialog open={true} warning={warning} onOpenChange={vi.fn()} onDiscard={vi.fn()} onForce={vi.fn()} />,
+    );
     expect(screen.getByText(/0.85/)).toBeInTheDocument();
   });
 });

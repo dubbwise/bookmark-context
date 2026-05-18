@@ -44,7 +44,7 @@ export default function NewCollectionDialog({ open, onOpenChange, onCreated }: N
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>New Collection</DialogTitle>
           <DialogDescription>

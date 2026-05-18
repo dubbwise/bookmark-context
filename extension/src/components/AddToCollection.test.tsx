@@ -87,6 +87,19 @@ describe("AddToCollection", () => {
     expect(screen.queryByText("✓ Added")).not.toBeInTheDocument();
   });
 
+  it("preselects active collection when on collection screen", () => {
+    render(
+      <AddToCollection
+        currentTab={{ title: "P", url: "https://x.com" }}
+        collections={collections}
+        activeCollectionId="c1"
+        onAdd={vi.fn()}
+      />,
+    );
+    expect(screen.getByRole("combobox")).toHaveTextContent("Research");
+    expect(screen.getByRole("button", { name: /add to collection/i })).toBeEnabled();
+  });
+
   it("add button is disabled when no collection selected", () => {
     render(
       <AddToCollection

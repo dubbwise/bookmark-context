@@ -31,6 +31,8 @@ export type AddBookmarkResult = "saved" | "scan_warning";
 interface AddToCollectionProps {
   currentTab: CurrentTab | null;
   collections: Collection[];
+  /** When viewing a collection, preselect it in the dropdown. */
+  activeCollectionId?: string | null;
   scanWarning?: ScanWarning | null;
   onAdd: (collectionId: string, html: string | null) => Promise<AddBookmarkResult>;
 }
@@ -45,6 +47,7 @@ function scanWarningMessage(warning: ScanWarning): string {
 export default function AddToCollection({
   currentTab,
   collections,
+  activeCollectionId = null,
   scanWarning = null,
   onAdd,
 }: AddToCollectionProps) {
@@ -75,6 +78,14 @@ export default function AddToCollection({
   useEffect(() => {
     setAdded(false);
   }, [currentTab?.url]);
+
+  useEffect(() => {
+    if (activeCollectionId && collections.some((c) => c.id === activeCollectionId)) {
+      setSelectedCollectionId(activeCollectionId);
+    } else if (!activeCollectionId) {
+      setSelectedCollectionId("");
+    }
+  }, [activeCollectionId, collections]);
 
   return (
     <>

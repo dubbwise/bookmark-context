@@ -1,4 +1,4 @@
-import { render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import BookmarkList from "./BookmarkList";
@@ -12,47 +12,62 @@ const bookmarks: Bookmark[] = [
 
 describe("BookmarkList", () => {
   it("renders collection name in header", () => {
-    render(<BookmarkList collection={coll} bookmarks={bookmarks} onBack={vi.fn()} onEdit={vi.fn()} onDeleteBookmarks={vi.fn()} onReindex={vi.fn()} />);
+    render(<BookmarkList collection={coll} bookmarks={bookmarks} onBack={vi.fn()} onEdit={vi.fn()} onRequestRemoveSelected={vi.fn()} onReindexBookmarks={vi.fn()} />);
     expect(screen.getByText("Research")).toBeInTheDocument();
   });
 
   it("renders bookmark titles", () => {
-    render(<BookmarkList collection={coll} bookmarks={bookmarks} onBack={vi.fn()} onEdit={vi.fn()} onDeleteBookmarks={vi.fn()} onReindex={vi.fn()} />);
+    render(<BookmarkList collection={coll} bookmarks={bookmarks} onBack={vi.fn()} onEdit={vi.fn()} onRequestRemoveSelected={vi.fn()} onReindexBookmarks={vi.fn()} />);
     expect(screen.getByText("Example")).toBeInTheDocument();
     expect(screen.getByText("Other")).toBeInTheDocument();
   });
 
-  it("shows indexed status badge", () => {
-    render(<BookmarkList collection={coll} bookmarks={bookmarks} onBack={vi.fn()} onEdit={vi.fn()} onDeleteBookmarks={vi.fn()} onReindex={vi.fn()} />);
-    expect(screen.getByText("Indexed")).toBeInTheDocument();
+  it("shows status badge only when not indexed", () => {
+    render(<BookmarkList collection={coll} bookmarks={bookmarks} onBack={vi.fn()} onEdit={vi.fn()} onRequestRemoveSelected={vi.fn()} onReindexBookmarks={vi.fn()} />);
+    expect(screen.queryByText("Indexed")).not.toBeInTheDocument();
     expect(screen.getByText("Error")).toBeInTheDocument();
   });
 
   it("calls onBack when back button clicked", async () => {
     const onBack = vi.fn();
-    render(<BookmarkList collection={coll} bookmarks={[]} onBack={onBack} onEdit={vi.fn()} onDeleteBookmarks={vi.fn()} onReindex={vi.fn()} />);
+    render(<BookmarkList collection={coll} bookmarks={[]} onBack={onBack} onEdit={vi.fn()} onRequestRemoveSelected={vi.fn()} onReindexBookmarks={vi.fn()} />);
     await userEvent.click(screen.getByRole("button", { name: /back/i }));
     expect(onBack).toHaveBeenCalled();
   });
 
-  it("select all toggles selection and bulk remove calls onDeleteBookmarks", async () => {
+  it("select all and remove button requests bulk remove", async () => {
     const user = userEvent.setup();
-    const onDeleteBookmarks = vi.fn().mockResolvedValue(undefined);
+    const onRequestRemoveSelected = vi.fn();
     render(
       <BookmarkList
         collection={coll}
         bookmarks={bookmarks}
         onBack={vi.fn()}
         onEdit={vi.fn()}
-        onDeleteBookmarks={onDeleteBookmarks}
-        onReindex={vi.fn()}
+        onRequestRemoveSelected={onRequestRemoveSelected}
+        onReindexBookmarks={vi.fn()}
       />,
     );
     await user.click(screen.getByRole("checkbox", { name: /select all bookmarks/i }));
-    expect(screen.getByRole("button", { name: /remove 2 selected bookmarks/i })).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: /remove 2 selected bookmarks/i }));
-    const dialog = screen.getByRole("dialog");
-    await user.click(within(dialog).getByRole("button", { name: /^remove$/i }));
-    expect(onDeleteBookmarks).toHaveBeenCalledWith(expect.arrayContaining(["b1", "b2"]));
+    expect(onRequestRemoveSelected).toHaveBeenCalledWith(expect.arrayContaining(["b1", "b2"]));
+  });
+
+  it("bulk re-index calls onReindexBookmarks for selected", async () => {
+    const user = userEvent.setup();
+    const onReindexBookmarks = vi.fn().mockResolvedValue(undefined);
+    render(
+      <BookmarkList
+        collection={coll}
+        bookmarks={bookmarks}
+        onBack={vi.fn()}
+        onEdit={vi.fn()}
+        onDeleteBookmarks={vi.fn()}
+        onReindexBookmarks={onReindexBookmarks}
+      />,
+    );
+    await user.click(screen.getByRole("checkbox", { name: /select all bookmarks/i }));
+    await user.click(screen.getByRole("button", { name: /re-index 2 selected bookmarks/i }));
+    expect(onReindexBookmarks).toHaveBeenCalledWith(expect.arrayContaining(["b1", "b2"]));
   });
 });

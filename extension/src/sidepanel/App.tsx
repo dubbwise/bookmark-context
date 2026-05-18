@@ -7,10 +7,7 @@ import CollectionList from "../components/CollectionList";
 import BookmarkList from "../components/BookmarkList";
 import AddToCollection from "../components/AddToCollection";
 import StatusBar from "../components/StatusBar";
-import NewCollectionDialog from "../components/dialogs/NewCollectionDialog";
-import EditCollectionDialog from "../components/dialogs/EditCollectionDialog";
-import DeleteCollectionDialog from "../components/dialogs/DeleteCollectionDialog";
-import ScanWarningDialog from "../components/dialogs/ScanWarningDialog";
+import AppDialogs, { type RemoveBookmarksRequest } from "../components/dialogs/AppDialogs";
 import SettingsDrawer from "../components/SettingsDrawer";
 import { toast } from "@/lib/toast";
 import { useActiveTab } from "@/lib/useActiveTab";
@@ -28,6 +25,8 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Collection | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Collection | null>(null);
+  const [removeBookmarks, setRemoveBookmarks] = useState<RemoveBookmarksRequest | null>(null);
+  const [clearBookmarkSelectionToken, setClearBookmarkSelectionToken] = useState(0);
   const [scanWarning, setScanWarning] = useState<ScanWarning | null>(null);
   const [pendingSave, setPendingSave] = useState<{
     collectionId: string;
@@ -167,8 +166,19 @@ export default function App() {
     }
   }
 
-  async function handleReindexBookmark(id: string) {
-    await api.reindexBookmark(id);
+  async function handleConfirmRemoveBookmarks() {
+    if (!removeBookmarks) return;
+    await handleDeleteBookmarks(removeBookmarks.bookmarkIds);
+    setClearBookmarkSelectionToken((t) => t + 1);
+  }
+
+  async function handleReindexBookmarks(ids: string[]) {
+    try {
+      await Promise.all(ids.map((id) => api.reindexBookmark(id)));
+    } catch (e) {
+      toast.error(`Failed to re-index: ${(e as Error).message}`);
+      throw e;
+    }
     if (selectedCollection) {
       const bms = await api.listBookmarks(selectedCollection.id);
       setBookmarks(bms);
@@ -219,8 +229,15 @@ export default function App() {
             setSearchQuery("");
           }}
           onEdit={() => setEditTarget(selectedCollection)}
-          onDeleteBookmarks={handleDeleteBookmarks}
-          onReindex={handleReindexBookmark}
+          onRequestRemoveSelected={(ids) => {
+            if (!selectedCollection) return;
+            setRemoveBookmarks({
+              collectionName: selectedCollection.name,
+              bookmarkIds: ids,
+            });
+          }}
+          onReindexBookmarks={handleReindexBookmarks}
+          clearSelectionToken={clearBookmarkSelectionToken}
         />
       ) : (
         <CollectionList
@@ -234,6 +251,7 @@ export default function App() {
       <AddToCollection
         currentTab={currentTab}
         collections={collections}
+        activeCollectionId={selectedCollection?.id ?? null}
         scanWarning={
           scanWarning && pendingSave?.url === currentTab?.url ? scanWarning : null
         }
@@ -241,39 +259,37 @@ export default function App() {
       />
       <StatusBar online={daemonOnline} backend={daemonVersion} />
 
-      <NewCollectionDialog
-        open={newCollectionOpen}
-        onOpenChange={setNewCollectionOpen}
-        onCreated={handleCollectionCreated}
+      <AppDialogs
+        newCollectionOpen={newCollectionOpen}
+        onNewCollectionOpenChange={setNewCollectionOpen}
+        onCollectionCreated={handleCollectionCreated}
+        editTarget={editTarget}
+        onEditOpenChange={(o) => { if (!o) setEditTarget(null); }}
+        onCollectionEdited={handleCollectionEdited}
+        onRequestDeleteCollection={(c) => {
+          setDeleteTarget(c);
+          setEditTarget(null);
+        }}
+        deleteTarget={deleteTarget}
+        onDeleteOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
+        onCollectionDeleted={handleCollectionDeleted}
+        removeBookmarks={removeBookmarks}
+        onRemoveBookmarksOpenChange={(o) => { if (!o) setRemoveBookmarks(null); }}
+        onConfirmRemoveBookmarks={handleConfirmRemoveBookmarks}
+        scanWarning={scanWarning}
+        scanWarningOpen={scanWarning !== null && pendingSave !== null}
+        onScanWarningOpenChange={(o) => {
+          if (!o) {
+            setScanWarning(null);
+            setPendingSave(null);
+          }
+        }}
+        onScanWarningDiscard={() => {
+          setScanWarning(null);
+          setPendingSave(null);
+        }}
+        onScanWarningForce={handleForceSave}
       />
-      {editTarget && (
-        <EditCollectionDialog
-          collection={editTarget}
-          open={true}
-          onOpenChange={(o) => { if (!o) setEditTarget(null); }}
-          onEdited={handleCollectionEdited}
-          onDelete={() => {
-            setDeleteTarget(editTarget);
-            setEditTarget(null);
-          }}
-        />
-      )}
-      {deleteTarget && (
-        <DeleteCollectionDialog
-          collection={deleteTarget}
-          open={true}
-          onOpenChange={(o) => { if (!o) setDeleteTarget(null); }}
-          onDeleted={handleCollectionDeleted}
-        />
-      )}
-      {scanWarning && pendingSave && (
-        <ScanWarningDialog
-          warning={scanWarning}
-          open={true}
-          onDiscard={() => { setScanWarning(null); setPendingSave(null); }}
-          onForce={handleForceSave}
-        />
-      )}
       <SettingsDrawer open={settingsOpen} onOpenChange={setSettingsOpen} />
     </div>
   );

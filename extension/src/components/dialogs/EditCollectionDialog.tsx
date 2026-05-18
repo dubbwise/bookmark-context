@@ -14,11 +14,12 @@ import { Spinner } from "@/components/ui/spinner";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { api } from "../../api";
 import { toast } from "@/lib/toast";
+import { destructiveDialogFooterClass } from "./dialog-layout";
 import type { Collection } from "../../types";
 
 interface EditCollectionDialogProps {
   open: boolean;
-  collection: Collection;
+  collection: Collection | null;
   onOpenChange: (open: boolean) => void;
   onEdited: (updated: Collection) => void;
   onDelete: () => void;
@@ -31,16 +32,18 @@ export default function EditCollectionDialog({
   onEdited,
   onDelete,
 }: EditCollectionDialogProps) {
-  const [name, setName] = useState(collection.name);
-  const [desc, setDesc] = useState(collection.description);
+  const [name, setName] = useState(collection?.name ?? "");
+  const [desc, setDesc] = useState(collection?.description ?? "");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (open) {
+    if (open && collection) {
       setName(collection.name);
       setDesc(collection.description);
     }
   }, [open, collection]);
+
+  if (!collection) return null;
 
   async function handleUpdate() {
     const trimmed = name.trim();
@@ -88,7 +91,7 @@ export default function EditCollectionDialog({
             />
           </Field>
         </FieldGroup>
-        <DialogFooter className="flex flex-row justify-between">
+        <DialogFooter className={destructiveDialogFooterClass}>
           <Button
             type="button"
             variant="destructive"
