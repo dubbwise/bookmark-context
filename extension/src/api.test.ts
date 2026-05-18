@@ -36,6 +36,13 @@ describe("typed api wrapper", () => {
   it("addBookmark() passes force flag when true", async () => {
     (rawApi.addBookmark as ReturnType<typeof vi.fn>).mockResolvedValue({ id: "b1", index_status: "pending" });
     await api.addBookmark("c1", "https://example.com", "Title", null, true);
-    expect(rawApi.addBookmark).toHaveBeenCalledWith("c1", "https://example.com", "Title", null, true);
+    expect(rawApi.addBookmark).toHaveBeenCalledWith(
+      "c1",
+      "https://example.com",
+      "Title",
+      null,
+      true,
+      "",
+    );
   });
 });

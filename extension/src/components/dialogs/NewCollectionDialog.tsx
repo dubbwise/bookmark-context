@@ -9,8 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Spinner } from "@/components/ui/spinner";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { api } from "../../api";
+import { toast } from "@/lib/toast";
 
 interface NewCollectionDialogProps {
   open: boolean;
@@ -34,7 +36,7 @@ export default function NewCollectionDialog({ open, onOpenChange, onCreated }: N
       onOpenChange(false);
       onCreated();
     } catch (e) {
-      alert(`Failed to create collection: ${(e as Error).message}`);
+      toast.error(`Failed to create collection: ${(e as Error).message}`);
     } finally {
       setSaving(false);
     }
@@ -49,9 +51,9 @@ export default function NewCollectionDialog({ open, onOpenChange, onCreated }: N
             Create a collection to organize saved pages.
           </DialogDescription>
         </DialogHeader>
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="new-collection-name">Name</Label>
+        <FieldGroup>
+          <Field>
+            <FieldLabel htmlFor="new-collection-name">Name</FieldLabel>
             <Input
               id="new-collection-name"
               placeholder="Collection name"
@@ -60,22 +62,23 @@ export default function NewCollectionDialog({ open, onOpenChange, onCreated }: N
               autoFocus
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="new-collection-desc">Description</Label>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="new-collection-desc">Description</FieldLabel>
             <Input
               id="new-collection-desc"
               placeholder="Optional description"
               value={desc}
               onChange={(e) => setDesc(e.target.value)}
             />
-          </div>
-        </div>
+          </Field>
+        </FieldGroup>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
           <Button type="button" onClick={handleCreate} disabled={!name.trim() || saving}>
+            {saving && <Spinner data-icon="inline-start" />}
             Create
           </Button>
         </DialogFooter>

@@ -7,7 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { TriangleAlertIcon } from "lucide-react";
 import type { ScanWarning } from "../../types";
 
 interface ScanWarningDialogProps {
@@ -19,27 +21,35 @@ interface ScanWarningDialogProps {
 
 export default function ScanWarningDialog({ open, warning, onDiscard, onForce }: ScanWarningDialogProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const unscannable = warning.signals.includes("content_unscannable");
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) onDiscard(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Suspicious content detected</DialogTitle>
+          <DialogTitle>
+            {unscannable ? "Could not scan page" : "Suspicious content detected"}
+          </DialogTitle>
           <DialogDescription>
-            Risk score {warning.risk_score.toFixed(2)} · signals: {warning.signals.join(", ")}
+            {unscannable
+              ? "This page may be JavaScript-rendered. Saving without a scan could miss embedded instructions."
+              : `Risk score ${warning.risk_score.toFixed(2)} · signals: ${warning.signals.join(", ")}`}
           </DialogDescription>
         </DialogHeader>
         {showDetails && (
-          <div>
-            <p className="text-sm font-medium">Flagged snippets</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted-foreground">
-              {warning.matches.map((m, i) => (
-                <li key={i} className="break-all">
-                  <code className="text-destructive">{m}</code>
-                </li>
-              ))}
-            </ul>
-          </div>
+          <Alert variant="destructive">
+            <TriangleAlertIcon />
+            <AlertTitle>Flagged snippets</AlertTitle>
+            <AlertDescription>
+              <ul className="mt-2 flex list-disc flex-col gap-1 pl-5">
+                {warning.matches.map((m, i) => (
+                  <li key={i} className="break-all">
+                    <code>{m}</code>
+                  </li>
+                ))}
+              </ul>
+            </AlertDescription>
+          </Alert>
         )}
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onDiscard}>

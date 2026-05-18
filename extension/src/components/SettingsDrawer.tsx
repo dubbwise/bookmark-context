@@ -8,19 +8,19 @@ import {
 } from "@/components/ui/drawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { applyTheme, type Theme } from "@/lib/theme";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Field, FieldGroup, FieldLabel, FieldTitle } from "@/components/ui/field";
+import { applyTheme, setStoredTheme, type Theme } from "@/lib/theme";
 
 interface SettingsDrawerProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-const THEME_OPTIONS: { value: Theme; label: string; id: string }[] = [
-  { value: "light", label: "Light", id: "theme-light" },
-  { value: "dark", label: "Dark", id: "theme-dark" },
-  { value: "system", label: "System", id: "theme-system" },
+const THEME_OPTIONS: { value: Theme; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
 ];
 
 export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerProps) {
@@ -48,10 +48,15 @@ export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerPro
     if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
   }, []);
 
+  function handleThemeChange(next: Theme) {
+    setTheme(next);
+    applyTheme(next);
+    void setStoredTheme(next);
+  }
+
   async function handleSave() {
     if (!Number.isInteger(port) || port < 1 || port > 65535) return;
     await chrome.storage.sync.set({ daemonPort: port, theme });
-    applyTheme(theme);
     setSaved(true);
     if (savedTimerRef.current) clearTimeout(savedTimerRef.current);
     savedTimerRef.current = setTimeout(() => setSaved(false), 2000);
@@ -63,31 +68,38 @@ export default function SettingsDrawer({ open, onOpenChange }: SettingsDrawerPro
         <DrawerHeader>
           <DrawerTitle>Settings</DrawerTitle>
         </DrawerHeader>
-        <div className="px-4 space-y-4 pb-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="settings-daemon-port">Daemon port</Label>
-            <Input
-              id="settings-daemon-port"
-              type="number"
-              min={1}
-              max={65535}
-              value={port}
-              onChange={(e) => setPort(Number(e.target.value))}
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Theme</Label>
-            <RadioGroup value={theme} onValueChange={(v) => setTheme(v as Theme)} className="space-y-2">
-              {THEME_OPTIONS.map(({ value, label, id }) => (
-                <div key={value} className="flex items-center gap-2">
-                  <RadioGroupItem value={value} id={id} />
-                  <Label htmlFor={id} className="font-normal cursor-pointer">
+        <div className="flex flex-col gap-4 px-4 pb-2">
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="settings-daemon-port">Daemon port</FieldLabel>
+              <Input
+                id="settings-daemon-port"
+                type="number"
+                min={1}
+                max={65535}
+                value={port}
+                onChange={(e) => setPort(Number(e.target.value))}
+              />
+            </Field>
+            <Field orientation="horizontal">
+              <FieldTitle id="settings-theme-label">Theme</FieldTitle>
+              <ToggleGroup
+                type="single"
+                value={theme}
+                onValueChange={(v) => v && handleThemeChange(v as Theme)}
+                variant="outline"
+                size="sm"
+                spacing={2}
+                aria-labelledby="settings-theme-label"
+              >
+                {THEME_OPTIONS.map(({ value, label }) => (
+                  <ToggleGroupItem key={value} value={value} aria-label={label}>
                     {label}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
+                  </ToggleGroupItem>
+                ))}
+              </ToggleGroup>
+            </Field>
+          </FieldGroup>
         </div>
         <DrawerFooter>
           <Button onClick={handleSave} disabled={saved}>

@@ -44,6 +44,23 @@ def test_update_bookmark_status(db: Database):
     assert bm["indexed_at"] is not None
 
 
+def test_add_bookmark_stores_favicon_url(db: Database):
+    coll_id = db.create_collection("Research", "")
+    bm_id = db.add_bookmark(
+        coll_id, "https://example.com", "Example", favicon_url="https://example.com/icon.png"
+    )
+    bm = db.get_bookmark(bm_id)
+    assert bm["favicon_url"] == "https://example.com/icon.png"
+
+
+def test_update_bookmark_status_done_stores_favicon(db: Database):
+    coll_id = db.create_collection("Research", "")
+    bm_id = db.add_bookmark(coll_id, "https://example.com", "Example")
+    db.update_bookmark_status(bm_id, "done", favicon_url="https://example.com/favicon.ico")
+    bm = db.get_bookmark(bm_id)
+    assert bm["favicon_url"] == "https://example.com/favicon.ico"
+
+
 def test_add_chunks(db: Database):
     coll_id = db.create_collection("Research", "")
     bm_id = db.add_bookmark(coll_id, "https://example.com", "Example")

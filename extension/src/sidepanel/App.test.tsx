@@ -11,8 +11,19 @@ vi.mock("../api", () => ({
 // Chrome API stub
 Object.assign(globalThis, {
   chrome: {
-    tabs: { query: vi.fn().mockResolvedValue([{ title: "Test Page", url: "https://example.com" }]) },
-    storage: { sync: { get: vi.fn().mockResolvedValue({ daemonPort: 7331 }) } },
+    tabs: {
+      query: vi.fn().mockResolvedValue([{ title: "Test Page", url: "https://example.com" }]),
+      get: vi.fn().mockResolvedValue({ title: "Test Page", url: "https://example.com" }),
+      onActivated: { addListener: vi.fn(), removeListener: vi.fn() },
+      onUpdated: { addListener: vi.fn(), removeListener: vi.fn() },
+    },
+    storage: {
+      sync: { get: vi.fn().mockResolvedValue({ daemonPort: 7331 }) },
+      session: {
+        get: vi.fn().mockResolvedValue({}),
+        remove: vi.fn().mockResolvedValue(undefined),
+      },
+    },
   },
 });
 

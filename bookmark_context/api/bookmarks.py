@@ -4,7 +4,7 @@ from fastapi.responses import JSONResponse
 from starlette.responses import Response
 from bookmark_context.api.schemas import BookmarkCreate, BookmarkResponse, ScanWarning
 from bookmark_context.indexer.pipeline import IndexPipeline
-from bookmark_context.indexer.scraper import scrape_url
+from bookmark_context.indexer.scraper import scrape_url, extract_favicon, is_spa_shell
 from bookmark_context.indexer.chunker import chunk_text
 from bookmark_context.indexer.scanner import scan_chunks
 
@@ -30,6 +30,17 @@ def add_bookmark(
 
     if not force:
         text = scrape_url(body.url, html=body.html)
+        if text and is_spa_shell(text):
+            return JSONResponse(
+                status_code=200,
+                content=ScanWarning(
+                    risk_score=0.5,
+                    signals=["content_unscannable"],
+                    matches=[
+                        "Page looks JavaScript-rendered; could not extract real content to scan."
+                    ],
+                ).model_dump(),
+            )
         if text:
             chunks = chunk_text(text)
             results = scan_chunks(chunks)
@@ -47,7 +58,12 @@ def add_bookmark(
                     ).model_dump(),
                 )
 
-    bm_id = db.add_bookmark(collection_id, body.url, body.title or body.url)
+    favicon_url = body.favicon_url
+    if not favicon_url and body.html:
+        favicon_url = extract_favicon(body.html, body.url)
+    bm_id = db.add_bookmark(
+        collection_id, body.url, body.title or body.url, favicon_url=favicon_url
+    )
     pipeline = IndexPipeline(db=db, vs=request.app.state.vs, embedder=request.app.state.embedder)
     background_tasks.add_task(pipeline.index_bookmark, bm_id, body.html)
     bm = db.get_bookmark(bm_id)

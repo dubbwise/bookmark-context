@@ -2,6 +2,53 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
+_AI_ENTITY = (
+    r"(?:AI|LLM|language\s+models?|chat\s*bots?|chatbots?|bots?|automated\s+(?:agents?|systems?))"
+)
+
+# Embedded instructions targeting LLM/AI readers (composite + high-confidence standalone)
+_LLM_TARGETED_INSTRUCTION_WEIGHT = 0.82
+
+_LLM_STANDALONE_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"\brule\s+for\s+AI\s+assistants?\s+and\s+bots?\b",
+        r"\binstructions?\s+(?:are\s+)?(?:only\s+)?for\s+AI\s+(?:assistants?|agents?|bots?|models?)\b",
+        r"\bdisregard\s+this\s+AI\s+protection\s+rule\b",
+        r"\bAI\s+protection\s+rule\b",
+        r"\b(?:hidden|invisible|embedded)\s+(?:instructions?|prompts?)\s+for\s+"
+        + _AI_ENTITY,
+    ]
+]
+
+_LLM_AUDIENCE_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        rf"\bif\s+you\s+(?:are|'re)\s+(?:an?\s+)?{_AI_ENTITY}\b",
+        rf"\b(?:instructions?|rules?|messages?|notes?)\s+"
+        rf"(?:for|to|directed\s+at)\s+(?:any\s+)?{_AI_ENTITY}\b",
+        r"\b(?:dear|attention)\s+(?:AI|LLM|assistant|chatbot|bot)\b",
+        rf"\b(?:this|the\s+following)\s+(?:text|content|paragraph|section)\s+"
+        rf"is\s+(?:not\s+)?for\s+{_AI_ENTITY}\b",
+        r"\b(?:not\s+intended|not\s+meant)\s+for\s+humans?\b",
+        r"\b(?:humans?|people),?\s+please\s+(?:ignore|disregard|skip)\b",
+    ]
+]
+
+_LLM_DIRECTIVE_PATTERNS: list[re.Pattern[str]] = [
+    re.compile(p, re.IGNORECASE)
+    for p in [
+        r"\b(?:you|your)\s+(?:must|should|need\s+to|are\s+required\s+to)\s+"
+        r"(?:include|respond|answer|ignore|disregard|forget|override)\b",
+        r"\bdo\s+not\s+(?:complete|submit|proceed|follow)\s+"
+        r"(?:the\s+)?(?:task|form|application|instructions?)\s+(?:without|until)\b",
+        r"\bignore\s+(?:all\s+)?(?:previous|prior|above|the\s+above)\s+"
+        r"(?:instructions?|rules?|context)\b",
+        r"\bignore\s+(?:the\s+)?(?:form|below|safety\s+guidelines?|warnings?)\b",
+        r"\b(?:always|never)\s+(?:include|mention|respond|reveal|upvote|downvote)\b",
+    ]
+]
+
 # Each category: (weight 0.0–1.0, compiled patterns)
 # Weight represents how confident a match is that this is a real injection attempt.
 # Multiple categories firing raises the overall score.
@@ -86,6 +133,33 @@ class ScanResult:
     matches: list[str] = field(default_factory=list)   # first matching snippet per category
 
 
+def _snippet_from_match(text: str, m: re.Match[str]) -> str:
+    start = max(0, m.start() - 30)
+    end = min(len(text), m.end() + 30)
+    return text[start:end].replace("\n", " ").strip()
+
+
+def _matches_llm_targeted_instruction(text: str) -> tuple[bool, str]:
+    """Detect embedded instructions aimed at AI/LLM readers (standalone or audience + directive)."""
+    for pat in _LLM_STANDALONE_PATTERNS:
+        if m := pat.search(text):
+            return True, _snippet_from_match(text, m)
+
+    audience_match: re.Match[str] | None = None
+    for pat in _LLM_AUDIENCE_PATTERNS:
+        if m := pat.search(text):
+            audience_match = m
+            break
+    if not audience_match:
+        return False, ""
+
+    for pat in _LLM_DIRECTIVE_PATTERNS:
+        if m := pat.search(text):
+            return True, _snippet_from_match(text, m)
+
+    return False, _snippet_from_match(text, audience_match)
+
+
 def scan_chunk(text: str) -> ScanResult:
     """Scan one text chunk for prompt injection signals.
 
@@ -94,15 +168,15 @@ def scan_chunk(text: str) -> ScanResult:
     """
     triggered: list[tuple[str, float, str]] = []   # (category, weight, snippet)
 
+    llm_match, llm_snippet = _matches_llm_targeted_instruction(text)
+    if llm_match:
+        triggered.append(("llm_targeted_instruction", _LLM_TARGETED_INSTRUCTION_WEIGHT, llm_snippet))
+
     for category, (weight, patterns) in _CATEGORIES.items():
         for pat in patterns:
             m = pat.search(text)
             if m:
-                # Grab a short context window around the match for logging
-                start = max(0, m.start() - 30)
-                end = min(len(text), m.end() + 30)
-                snippet = text[start:end].replace("\n", " ").strip()
-                triggered.append((category, weight, snippet))
+                triggered.append((category, weight, _snippet_from_match(text, m)))
                 break   # one match per category is enough
 
     if not triggered:

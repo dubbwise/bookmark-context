@@ -113,6 +113,24 @@ def test_index_bookmark_sets_error_on_pipeline_failure(db, vs, mock_embedder):
     assert "out of memory" in bm["error_message"]
 
 
+def test_index_bookmark_stores_favicon_url(db, vs, mock_embedder):
+    coll_id = db.create_collection("Test", "")
+    bm_id = db.add_bookmark(coll_id, "https://example.com", "Example")
+
+    html_with_favicon = """
+    <html><head><link rel="icon" href="https://example.com/icon.png"></head>
+    <body><p>Some article content here for indexing.</p></body></html>
+    """
+
+    with patch("bookmark_context.indexer.pipeline.fetch_page_html", return_value=html_with_favicon):
+        with patch("bookmark_context.indexer.pipeline.scrape_url", return_value="Some article content here for indexing."):
+            pipeline = IndexPipeline(db=db, vs=vs, embedder=mock_embedder)
+            pipeline.index_bookmark(bm_id)
+
+    bm = db.get_bookmark(bm_id)
+    assert bm["favicon_url"] == "https://example.com/icon.png"
+
+
 def test_index_bookmark_accepts_prerendered_html(db, vs, mock_embedder):
     coll_id = db.create_collection("Test", "")
     bm_id = db.add_bookmark(coll_id, "https://example.com", "Example")

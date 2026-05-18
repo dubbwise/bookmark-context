@@ -13,6 +13,9 @@ Object.defineProperty(window, "matchMedia", {
   })),
 });
 
+// jsdom does not implement scrollIntoView; Radix Select uses it
+Element.prototype.scrollIntoView = vi.fn();
+
 // jsdom does not implement ResizeObserver; mock it for Radix UI components
 global.ResizeObserver = class ResizeObserver {
   observe() {}

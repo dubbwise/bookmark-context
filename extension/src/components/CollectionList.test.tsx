@@ -11,43 +11,48 @@ const mockCollections: Collection[] = [
 
 describe("CollectionList", () => {
   it("renders all collection names", () => {
-    render(<CollectionList collections={mockCollections} searchQuery="" onSelect={vi.fn()} onRename={vi.fn()} onDelete={vi.fn()} />);
+    render(<CollectionList collections={mockCollections} searchQuery="" onSelect={vi.fn()} onEdit={vi.fn()}  />);
     expect(screen.getByText("Research")).toBeInTheDocument();
     expect(screen.getByText("Recipes")).toBeInTheDocument();
   });
 
   it("shows bookmark count", () => {
-    render(<CollectionList collections={mockCollections} searchQuery="" onSelect={vi.fn()} onRename={vi.fn()} onDelete={vi.fn()} />);
+    render(<CollectionList collections={mockCollections} searchQuery="" onSelect={vi.fn()} onEdit={vi.fn()}  />);
     expect(screen.getByText("3 pages")).toBeInTheDocument();
   });
 
   it("filters by search query", () => {
-    render(<CollectionList collections={mockCollections} searchQuery="rec" onSelect={vi.fn()} onRename={vi.fn()} onDelete={vi.fn()} />);
+    render(<CollectionList collections={mockCollections} searchQuery="rec" onSelect={vi.fn()} onEdit={vi.fn()}  />);
     expect(screen.queryByText("Research")).not.toBeInTheDocument();
+    expect(screen.getByText("Recipes")).toBeInTheDocument();
+  });
+
+  it("ignores whitespace-only search", () => {
+    render(<CollectionList collections={mockCollections} searchQuery="   " onSelect={vi.fn()} onEdit={vi.fn()}  />);
+    expect(screen.getByText("Research")).toBeInTheDocument();
     expect(screen.getByText("Recipes")).toBeInTheDocument();
   });
 
   it("calls onSelect when row is clicked", async () => {
     const onSelect = vi.fn();
-    render(<CollectionList collections={mockCollections} searchQuery="" onSelect={onSelect} onRename={vi.fn()} onDelete={vi.fn()} />);
+    render(<CollectionList collections={mockCollections} searchQuery="" onSelect={onSelect} onEdit={vi.fn()}  />);
     await userEvent.click(screen.getByText("Research"));
     expect(onSelect).toHaveBeenCalledWith(mockCollections[0]);
   });
 
-  it("opens options menu and calls onRename", async () => {
+  it("opens options menu and calls onEdit", async () => {
     const user = userEvent.setup();
-    const onRename = vi.fn();
+    const onEdit = vi.fn();
     render(
       <CollectionList
         collections={mockCollections}
         searchQuery=""
         onSelect={vi.fn()}
-        onRename={onRename}
-        onDelete={vi.fn()}
+        onEdit={onEdit}
       />,
     );
     await user.click(screen.getAllByLabelText("Options")[0]);
-    await user.click(screen.getByRole("menuitem", { name: /rename/i }));
-    expect(onRename).toHaveBeenCalledWith(mockCollections[0]);
+    await user.click(screen.getByRole("menuitem", { name: /edit/i }));
+    expect(onEdit).toHaveBeenCalledWith(mockCollections[0]);
   });
 });

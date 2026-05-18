@@ -25,6 +25,7 @@ class BookmarkCreate(BaseModel):
     url: str
     title: str = ""
     html: str | None = None
+    favicon_url: str = ""
 
 
 class ScanWarning(BaseModel):

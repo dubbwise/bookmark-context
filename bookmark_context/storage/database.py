@@ -89,7 +89,9 @@ class Database:
                 (name, description, _now(), coll_id),
             )
 
-    def add_bookmark(self, collection_id: str, url: str, title: str) -> str:
+    def add_bookmark(
+        self, collection_id: str, url: str, title: str, favicon_url: str = ""
+    ) -> str:
         with self._connect() as conn:
             existing = conn.execute(
                 "SELECT id FROM bookmarks WHERE collection_id = ? AND url = ?",
@@ -99,8 +101,8 @@ class Database:
                 return existing["id"]
             bm_id = str(uuid.uuid4())
             conn.execute(
-                "INSERT INTO bookmarks (id, collection_id, url, title, added_at, index_status) VALUES (?,?,?,?,?,?)",
-                (bm_id, collection_id, url, title, _now(), "pending"),
+                "INSERT INTO bookmarks (id, collection_id, url, title, favicon_url, added_at, index_status) VALUES (?,?,?,?,?,?,?)",
+                (bm_id, collection_id, url, title, favicon_url, _now(), "pending"),
             )
         return bm_id
 
@@ -117,13 +119,25 @@ class Database:
             ).fetchall()
         return [dict(r) for r in rows]
 
-    def update_bookmark_status(self, bm_id: str, status: str, error_message: str | None = None) -> None:
+    def update_bookmark_status(
+        self,
+        bm_id: str,
+        status: str,
+        error_message: str | None = None,
+        favicon_url: str | None = None,
+    ) -> None:
         with self._connect() as conn:
             if status == "done":
-                conn.execute(
-                    "UPDATE bookmarks SET index_status = ?, indexed_at = ?, error_message = NULL WHERE id = ?",
-                    (status, _now(), bm_id),
-                )
+                if favicon_url is not None:
+                    conn.execute(
+                        "UPDATE bookmarks SET index_status = ?, indexed_at = ?, error_message = NULL, favicon_url = ? WHERE id = ?",
+                        (status, _now(), favicon_url, bm_id),
+                    )
+                else:
+                    conn.execute(
+                        "UPDATE bookmarks SET index_status = ?, indexed_at = ?, error_message = NULL WHERE id = ?",
+                        (status, _now(), bm_id),
+                    )
             else:
                 conn.execute(
                     "UPDATE bookmarks SET index_status = ?, error_message = ? WHERE id = ?",

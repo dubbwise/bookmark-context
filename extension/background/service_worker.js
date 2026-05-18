@@ -1,4 +1,5 @@
 import { api } from "../shared/api.js";
+import { capturePageHtml } from "../shared/capturePage.js";
 
 const MENU_ID = "bookmark-context-add";
 const SUBMENU_NEW = "bookmark-context-new";
@@ -63,21 +64,33 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   if (!String(info.menuItemId).startsWith("bc-col-")) return;
   const collectionId = String(info.menuItemId).replace("bc-col-", "");
 
-  // Capture rendered HTML
-  let html = null;
-  try {
-    const [result] = await chrome.scripting.executeScript({
-      target: { tabId: tab.id },
-      func: () => document.documentElement.outerHTML,
-    });
-    html = result?.result || null;
-  } catch {
-    // proceed without HTML
-  }
+  const html = await capturePageHtml(tab.id);
 
   try {
-    await api.addBookmark(collectionId, tab.url, tab.title || tab.url, html);
-    // Show a brief badge on the extension icon
+    const result = await api.addBookmark(
+      collectionId,
+      tab.url,
+      tab.title || tab.url,
+      html,
+      false,
+      tab.favIconUrl || "",
+    );
+    if (result?.status === "scan_warning") {
+      await chrome.storage.session.set({
+        pendingScanWarning: {
+          collectionId,
+          url: tab.url,
+          title: tab.title || tab.url,
+          html,
+          faviconUrl: tab.favIconUrl || "",
+          warning: result,
+        },
+      });
+      await chrome.sidePanel.open({ tabId: tab.id });
+      await chrome.action.setBadgeText({ text: "!", tabId: tab.id });
+      await chrome.action.setBadgeBackgroundColor({ color: "#f59e0b", tabId: tab.id });
+      return;
+    }
     await chrome.action.setBadgeText({ text: "✓", tabId: tab.id });
     await chrome.action.setBadgeBackgroundColor({ color: "#22c55e", tabId: tab.id });
     setTimeout(() => {

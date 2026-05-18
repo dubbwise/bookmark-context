@@ -1,54 +1,184 @@
-import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { ArrowLeft, Bookmark, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Spinner } from "@/components/ui/spinner";
+import {
+  Empty,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { ItemGroup } from "@/components/ui/item";
 import BookmarkItem from "./BookmarkItem";
-import type { Collection, Bookmark } from "../types";
+import type { Collection, Bookmark as BookmarkType } from "../types";
 
 interface BookmarkListProps {
   collection: Collection;
-  bookmarks: Bookmark[];
+  bookmarks: BookmarkType[];
   onBack: () => void;
-  onRename: () => void;
-  onDelete: () => void;
-  onDeleteBookmark: (id: string) => void;
+  onEdit: () => void;
+  onDeleteBookmarks: (ids: string[]) => void | Promise<void>;
   onReindex: (id: string) => void;
 }
 
-export default function BookmarkList({ collection, bookmarks, onBack, onRename, onDelete, onDeleteBookmark, onReindex }: BookmarkListProps) {
+export default function BookmarkList({
+  collection,
+  bookmarks,
+  onBack,
+  onEdit,
+  onDeleteBookmarks,
+  onReindex,
+}: BookmarkListProps) {
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [confirmRemoveOpen, setConfirmRemoveOpen] = useState(false);
+  const [removing, setRemoving] = useState(false);
+
+  useEffect(() => {
+    const valid = new Set(bookmarks.map((b) => b.id));
+    setSelectedIds((prev) => new Set([...prev].filter((id) => valid.has(id))));
+  }, [bookmarks]);
+
+  const setSelected = useCallback((id: string, selected: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (selected) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  }, []);
+
+  const n = bookmarks.length;
+  const selectedCount = selectedIds.size;
+  const allSelected = n > 0 && selectedCount === n;
+  const someSelected = selectedCount > 0 && !allSelected;
+  const headerChecked: boolean | "indeterminate" = allSelected
+    ? true
+    : someSelected
+      ? "indeterminate"
+      : false;
+
+  async function handleConfirmRemoveSelected() {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+    setRemoving(true);
+    try {
+      await onDeleteBookmarks(ids);
+      setSelectedIds(new Set());
+      setConfirmRemoveOpen(false);
+    } catch {
+      /* parent toasts on failure */
+    } finally {
+      setRemoving(false);
+    }
+  }
+
   return (
-    <section className="flex-1 flex flex-col overflow-hidden">
-      <div className="flex items-center gap-1 px-2 py-1.5 flex-shrink-0">
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onBack} aria-label="Back">
-          <ArrowLeft className="h-4 w-4" />
+    <section className="flex min-w-0 flex-1 flex-col">
+      <div className="flex shrink-0 items-center gap-1 px-2 py-1.5">
+        <Button variant="ghost" size="icon-sm" onClick={onBack} aria-label="Back">
+          <ArrowLeft />
         </Button>
-        <span className="flex-1 font-semibold text-sm truncate ml-1">{collection.name}</span>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground" onClick={onRename} title="Rename collection">
-          <Pencil className="h-3.5 w-3.5" />
+        <span className="ml-1 min-w-0 flex-1 truncate text-lg font-semibold">{collection.name}</span>
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="text-muted-foreground"
+          onClick={onEdit}
+          title="Edit collection"
+        >
+          <Pencil />
         </Button>
-        <Button variant="ghost" size="icon" className="h-7 w-7 text-muted-foreground hover:text-destructive" onClick={onDelete} title="Delete collection">
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        {selectedCount > 0 ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon-sm"
+            className="text-muted-foreground hover:text-destructive"
+            onClick={() => setConfirmRemoveOpen(true)}
+            title={`Remove ${selectedCount} selected`}
+            aria-label={`Remove ${selectedCount} selected bookmarks`}
+          >
+            <Trash2 />
+          </Button>
+        ) : null}
+        {n > 0 ? (
+          <div className="flex shrink-0 items-center px-0.5" onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={headerChecked}
+              onCheckedChange={(v) => {
+                if (v === true) setSelectedIds(new Set(bookmarks.map((b) => b.id)));
+                else setSelectedIds(new Set());
+              }}
+              aria-label="Select all bookmarks"
+            />
+          </div>
+        ) : null}
       </div>
-      <Separator />
-      <ScrollArea className="flex-1">
-        <div className="px-2 py-2">
-          {bookmarks.length === 0 ? (
-            <p className="text-[12px] text-muted-foreground px-2 py-3">
-              No bookmarks yet. Add pages using the panel below.
-            </p>
-          ) : (
-            bookmarks.map((b) => (
+      <ScrollArea className="px-2 py-2">
+        {bookmarks.length === 0 ? (
+          <div className="py-6">
+            <Empty className="border-0">
+              <EmptyHeader>
+                <EmptyMedia variant="icon">
+                  <Bookmark />
+                </EmptyMedia>
+                <EmptyTitle>No bookmarks yet</EmptyTitle>
+                <EmptyDescription>
+                  Add pages using the panel below.
+                </EmptyDescription>
+              </EmptyHeader>
+            </Empty>
+          </div>
+        ) : (
+          <ItemGroup className="min-w-0">
+            {bookmarks.map((b) => (
               <BookmarkItem
                 key={b.id}
                 bookmark={b}
-                onDelete={() => onDeleteBookmark(b.id)}
+                selected={selectedIds.has(b.id)}
+                onSelectChange={(sel) => setSelected(b.id, sel)}
                 onReindex={() => onReindex(b.id)}
               />
-            ))
-          )}
-        </div>
+            ))}
+          </ItemGroup>
+        )}
       </ScrollArea>
+      <Dialog open={confirmRemoveOpen} onOpenChange={setConfirmRemoveOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Remove selected bookmarks?</DialogTitle>
+            <DialogDescription>
+              Permanently remove {selectedCount} saved page{selectedCount === 1 ? "" : "s"} from{" "}
+              <span className="font-medium text-foreground">{collection.name}</span>. This cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setConfirmRemoveOpen(false)} disabled={removing}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={removing}
+              onClick={() => void handleConfirmRemoveSelected()}
+            >
+              {removing && <Spinner data-icon="inline-start" />}
+              Remove
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 }

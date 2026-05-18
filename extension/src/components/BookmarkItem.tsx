@@ -1,7 +1,17 @@
-import { RotateCcw, X } from "lucide-react";
+import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemDescription,
+  ItemFooter,
+  ItemMedia,
+  ItemTitle,
+} from "@/components/ui/item";
+import { Favicon } from "@/components/Favicon";
 import type { Bookmark } from "../types";
 
 const STATUS_LABELS: Record<Bookmark["index_status"], string> = {
@@ -11,37 +21,70 @@ const STATUS_LABELS: Record<Bookmark["index_status"], string> = {
   error: "Error",
 };
 
-const STATUS_CLASSES: Record<Bookmark["index_status"], string> = {
-  done: "bg-green-500/15 text-green-400 border-green-500/20",
-  pending: "bg-primary/15 text-primary border-primary/20",
-  indexing: "bg-primary/15 text-primary border-primary/20",
-  error: "bg-destructive/15 text-destructive border-destructive/20",
+const STATUS_VARIANT: Record<
+  Bookmark["index_status"],
+  "secondary" | "outline" | "destructive"
+> = {
+  done: "secondary",
+  pending: "outline",
+  indexing: "outline",
+  error: "destructive",
 };
 
 interface BookmarkItemProps {
   bookmark: Bookmark;
-  onDelete: () => void;
+  selected: boolean;
+  onSelectChange: (selected: boolean) => void;
   onReindex: () => void;
 }
 
-export default function BookmarkItem({ bookmark, onDelete, onReindex }: BookmarkItemProps) {
+export default function BookmarkItem({
+  bookmark,
+  selected,
+  onSelectChange,
+  onReindex,
+}: BookmarkItemProps) {
   return (
-    <div className="px-2 py-2 rounded-md mb-1 bg-card border border-border">
-      <p className="text-sm font-medium truncate">{bookmark.title || bookmark.url}</p>
-      <p className="text-[11px] text-muted-foreground truncate mt-0.5">{bookmark.url}</p>
-      <div className="flex items-center gap-2 mt-1.5">
-        <Badge variant="outline" className={cn("text-[10px] font-semibold px-1.5 py-0", STATUS_CLASSES[bookmark.index_status])}>
-          {STATUS_LABELS[bookmark.index_status]}
-        </Badge>
-        <div className="flex gap-1 ml-auto">
-          <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground" onClick={onReindex} title="Re-index">
-            <RotateCcw className="h-3 w-3" />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-5 w-5 text-muted-foreground hover:text-destructive" onClick={onDelete} title="Remove">
-            <X className="h-3 w-3" />
-          </Button>
+    <Item size="xs" variant="default" className="grid grid-cols-[auto_1fr_auto]">
+      <ItemMedia variant="image">
+        <Favicon
+          url={bookmark.url}
+          faviconUrl={bookmark.favicon_url}
+          className="size-full rounded-sm"
+        />
+      </ItemMedia>
+      <ItemContent className="w-full">
+        <div className="flex items-center space-x-2">
+          <ItemTitle className="">{bookmark.title || bookmark.url}</ItemTitle>
+          <Badge
+            variant={STATUS_VARIANT[bookmark.index_status]}
+            className="max-w-[calc(100%-4rem)] shrink truncate"
+          >
+            <Button
+              variant="ghost"
+              size="icon-xs"
+              className="text-muted-foreground"
+              onClick={onReindex}
+              title="Re-index"
+            >
+              <RotateCcw />
+            </Button>
+            {STATUS_LABELS[bookmark.index_status]}
+          </Badge>
         </div>
-      </div>
-    </div>
+        <ItemDescription className="truncate text-ellipsis">{bookmark.url}</ItemDescription>
+      </ItemContent>
+      <ItemFooter>
+        <ItemActions className="gap-1">
+          <div className="flex items-center px-0.5" onClick={(e) => e.stopPropagation()}>
+            <Checkbox
+              checked={selected}
+              onCheckedChange={(v) => onSelectChange(v === true)}
+              aria-label={`Select ${bookmark.title || bookmark.url}`}
+            />
+          </div>
+        </ItemActions>
+      </ItemFooter>
+    </Item>
   );
 }

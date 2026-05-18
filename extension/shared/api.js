@@ -29,8 +29,13 @@ export const api = {
     request("PATCH", `/collections/${id}`, { name, description }),
   listBookmarks: (collectionId) =>
     request("GET", `/collections/${collectionId}/bookmarks`),
-  addBookmark: (collectionId, url, title, html = null, force = false) =>
-    request("POST", `/collections/${collectionId}/bookmarks${force ? "?force=true" : ""}`, { url, title, html }),
+  addBookmark: (collectionId, url, title, html = null, force = false, faviconUrl = "") =>
+    request("POST", `/collections/${collectionId}/bookmarks${force ? "?force=true" : ""}`, {
+      url,
+      title,
+      html,
+      favicon_url: faviconUrl || "",
+    }),
   deleteBookmark: (id) => request("DELETE", `/bookmarks/${id}`),
   reindexBookmark: (id) => request("POST", `/bookmarks/${id}/reindex`),
 };

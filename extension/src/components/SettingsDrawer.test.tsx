@@ -35,15 +35,14 @@ describe("SettingsDrawer", () => {
     render(<SettingsDrawer open={true} onOpenChange={vi.fn()} />);
     await act(async () => {});
     expect(screen.getByLabelText(/daemon port/i)).toHaveValue(7331);
-    expect(screen.getByLabelText(/light/i)).not.toBeChecked();
-    expect(screen.getByLabelText(/dark/i)).toBeChecked();
+    expect(screen.getByRole("radio", { name: /dark/i })).toHaveAttribute("data-state", "on");
   });
 
   it("selects light theme from storage", async () => {
     mockGet.mockResolvedValue({ daemonPort: 7331, theme: "light" });
     render(<SettingsDrawer open={true} onOpenChange={vi.fn()} />);
     await act(async () => {});
-    expect(screen.getByLabelText(/light/i)).toBeChecked();
+    expect(screen.getByRole("radio", { name: /light/i })).toHaveAttribute("data-state", "on");
   });
 
   it("saves port and theme to storage when Save is clicked", async () => {
@@ -53,22 +52,21 @@ describe("SettingsDrawer", () => {
     const input = screen.getByLabelText(/daemon port/i);
     await userEvent.clear(input);
     await userEvent.type(input, "9000");
-    await userEvent.click(screen.getByLabelText(/system/i));
+    await userEvent.click(screen.getByRole("radio", { name: /system/i }));
     await act(async () => {
       await userEvent.click(screen.getByRole("button", { name: /save/i }));
     });
     expect(mockSet).toHaveBeenCalledWith({ daemonPort: 9000, theme: "system" });
   });
 
-  it("applies light theme after saving", async () => {
+  it("applies and persists light theme on click", async () => {
     mockGet.mockResolvedValue({ daemonPort: 7331, theme: "dark" });
     render(<SettingsDrawer open={true} onOpenChange={vi.fn()} />);
     await act(async () => {});
-    await userEvent.click(screen.getByLabelText(/light/i));
-    await act(async () => {
-      await userEvent.click(screen.getByRole("button", { name: /save/i }));
-    });
+    await userEvent.click(screen.getByRole("radio", { name: /light/i }));
+    await act(async () => {});
     expect(document.documentElement.classList.contains("dark")).toBe(false);
+    expect(mockSet).toHaveBeenCalledWith({ theme: "light" });
   });
 
   it("shows Saved ✓ after saving", async () => {

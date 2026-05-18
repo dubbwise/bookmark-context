@@ -2,7 +2,7 @@ import { render, screen, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import NewCollectionDialog from "./NewCollectionDialog";
-import RenameCollectionDialog from "./RenameCollectionDialog";
+import EditCollectionDialog from "./EditCollectionDialog";
 import DeleteCollectionDialog from "./DeleteCollectionDialog";
 import ScanWarningDialog from "./ScanWarningDialog";
 import type { Collection, ScanWarning } from "../../types";
@@ -41,18 +41,21 @@ describe("NewCollectionDialog", () => {
   });
 });
 
-describe("RenameCollectionDialog", () => {
+describe("EditCollectionDialog", () => {
   it("pre-fills the collection name", () => {
-    render(<RenameCollectionDialog open={true} collection={coll} onOpenChange={vi.fn()} onRenamed={vi.fn()} />);
+    render(<EditCollectionDialog open={true} collection={coll} onOpenChange={vi.fn()} onEdited={vi.fn()} onDelete={vi.fn()} />);
     expect(screen.getByDisplayValue("Research")).toBeInTheDocument();
   });
 });
 
 describe("DeleteCollectionDialog", () => {
-  it("shows collection name and count", () => {
+  it("shows bookmark count and requires collection name to delete", async () => {
+    const user = userEvent.setup();
     render(<DeleteCollectionDialog open={true} collection={coll} onOpenChange={vi.fn()} onDeleted={vi.fn()} />);
-    expect(screen.getByText(/Research/)).toBeInTheDocument();
     expect(screen.getByText(/5/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /^delete$/i })).toBeDisabled();
+    await user.type(screen.getByPlaceholderText("Research"), "Research");
+    expect(screen.getByRole("button", { name: /^delete$/i })).toBeEnabled();
   });
 });
 

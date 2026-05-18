@@ -30,3 +30,9 @@ export interface DaemonStatus {
   status: string;
   version: string;
 }
+
+export interface CurrentTab {
+  title: string;
+  url: string;
+  faviconUrl?: string;
+}

@@ -1,6 +1,6 @@
-import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useState, useEffect } from "react";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 
 interface SearchBarProps {
   value: string;
@@ -22,18 +22,19 @@ export default function SearchBar({ value, onChange, autoFocus }: SearchBarProps
   };
 
   return (
-    <div className="px-3 py-2 flex-shrink-0">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-        <Input
+    <div className="shrink-0 px-3 py-2">
+      <InputGroup className="h-8 text-xs">
+        <InputGroupAddon>
+          <Search />
+        </InputGroupAddon>
+        <InputGroupInput
           placeholder="Search collections…"
           value={internal}
           onChange={handleChange}
-          className="pl-8 h-8 text-xs bg-background border-transparent"
           autoFocus={autoFocus}
           onFocus={(e) => e.target.select()}
         />
-      </div>
+      </InputGroup>
     </div>
   );
 }

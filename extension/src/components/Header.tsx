@@ -21,55 +21,52 @@ export default function Header({
 }: HeaderProps) {
   return (
     <>
-      <header className="flex items-center justify-between px-3 py-2.5 bg-primary/10 flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <FolderBookmark className="h-6 w-6 shrink-0" aria-hidden />
-          <span className="font-semibold text-sm">Bookmark context</span>
+      <header className="flex min-w-0 shrink-0 items-center justify-between gap-2 bg-primary/10 px-3 py-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <FolderBookmark className="shrink-0" aria-hidden />
+          <span className="truncate text-sm font-semibold">Bookmark context</span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 text-xs px-2 text-muted-foreground"
+            className="text-xs text-muted-foreground"
             onClick={onNewCollection}
             title="New collection"
           >
-            <Plus className="h-3.5 w-3.5" />
+            <Plus data-icon="inline-start" />
             New
           </Button>
-          {showSearch && (
+          {/* {showSearch && (
             <Button
               variant="ghost"
-              size="icon"
-              className={cn(
-                "h-7 w-7 text-muted-foreground",
-                searchOpen && "bg-accent text-foreground",
-              )}
+              size="icon-sm"
+              className={cn("text-muted-foreground", searchOpen && "bg-accent text-foreground")}
               onClick={onSearchToggle}
               title="Search collections"
               aria-pressed={searchOpen}
             >
-              <Search className="h-3.5 w-3.5" />
+              <Search />
             </Button>
-          )}
+          )} */}
           <Button
             type="button"
             variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground"
+            size="icon-sm"
+            className="text-muted-foreground"
             onClick={reloadSidePanel}
             title="Reload extension"
           >
-            <RefreshCw className="h-3.5 w-3.5" />
+            <RefreshCw />
           </Button>
           <Button
             variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-muted-foreground"
+            size="icon-sm"
+            className="text-muted-foreground"
             onClick={onSettings}
             title="Settings"
           >
-            <Settings2 className="h-3.5 w-3.5" />
+            <Settings2 />
           </Button>
         </div>
       </header>

@@ -17,7 +17,11 @@ export const api = {
     title: string,
     html: string | null = null,
     force = false,
-  ) => rawApi.addBookmark(collectionId, url, title, html, force) as Promise<Bookmark | ScanWarning>,
+    faviconUrl = "",
+  ) =>
+    rawApi.addBookmark(collectionId, url, title, html, force, faviconUrl) as Promise<
+      Bookmark | ScanWarning
+    >,
   deleteBookmark: (id: string) => rawApi.deleteBookmark(id) as Promise<null>,
   reindexBookmark: (id: string) => rawApi.reindexBookmark(id) as Promise<Bookmark>,
 };

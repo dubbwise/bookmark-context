@@ -5,13 +5,15 @@ import Header from "../components/Header";
 import SearchBar from "../components/SearchBar";
 import CollectionList from "../components/CollectionList";
 import BookmarkList from "../components/BookmarkList";
-import CurrentPage from "../components/CurrentPage";
+import AddToCollection from "../components/AddToCollection";
 import StatusBar from "../components/StatusBar";
 import NewCollectionDialog from "../components/dialogs/NewCollectionDialog";
-import RenameCollectionDialog from "../components/dialogs/RenameCollectionDialog";
+import EditCollectionDialog from "../components/dialogs/EditCollectionDialog";
 import DeleteCollectionDialog from "../components/dialogs/DeleteCollectionDialog";
 import ScanWarningDialog from "../components/dialogs/ScanWarningDialog";
 import SettingsDrawer from "../components/SettingsDrawer";
+import { toast } from "@/lib/toast";
+import { useActiveTab } from "@/lib/useActiveTab";
 
 export default function App() {
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -19,16 +21,20 @@ export default function App() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
-  const [currentTab, setCurrentTab] = useState<{ title: string; url: string } | null>(null);
+  const currentTab = useActiveTab();
   const [daemonOnline, setDaemonOnline] = useState<boolean | null>(null);
   const [daemonVersion, setDaemonVersion] = useState("");
   const [newCollectionOpen, setNewCollectionOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [renameTarget, setRenameTarget] = useState<Collection | null>(null);
+  const [editTarget, setEditTarget] = useState<Collection | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Collection | null>(null);
   const [scanWarning, setScanWarning] = useState<ScanWarning | null>(null);
   const [pendingSave, setPendingSave] = useState<{
-    collectionId: string; url: string; title: string; html: string | null;
+    collectionId: string;
+    url: string;
+    title: string;
+    html: string | null;
+    faviconUrl?: string;
   } | null>(null);
 
   const loadCollections = useCallback(async () => {
@@ -54,14 +60,35 @@ export default function App() {
   useEffect(() => {
     checkDaemon();
     loadCollections();
-    chrome.tabs
-      .query({ active: true, currentWindow: true })
-      .then(([tab]) => {
-        if (tab) setCurrentTab({ title: tab.title || tab.url || "", url: tab.url || "" });
+    void chrome.storage.session.get("pendingScanWarning").then(({ pendingScanWarning }) => {
+      if (!pendingScanWarning) return;
+      void chrome.storage.session.remove("pendingScanWarning");
+      const p = pendingScanWarning as {
+        collectionId: string;
+        url: string;
+        title: string;
+        html: string | null;
+        faviconUrl?: string;
+        warning: ScanWarning;
+      };
+      setScanWarning(p.warning);
+      setPendingSave({
+        collectionId: p.collectionId,
+        url: p.url,
+        title: p.title,
+        html: p.html,
+        faviconUrl: p.faviconUrl,
       });
+    });
     const interval = setInterval(checkDaemon, 10_000);
     return () => clearInterval(interval);
   }, [checkDaemon, loadCollections]);
+
+  useEffect(() => {
+    if (!pendingSave || !currentTab?.url || pendingSave.url === currentTab.url) return;
+    setScanWarning(null);
+    setPendingSave(null);
+  }, [currentTab?.url, pendingSave]);
 
   useEffect(() => {
     if (!selectedCollection) return;
@@ -85,32 +112,54 @@ export default function App() {
     });
   }
 
-  async function handleAddBookmark(collectionId: string, html: string | null) {
-    if (!currentTab) return;
-    const result = await api.addBookmark(collectionId, currentTab.url, currentTab.title, html);
+  async function handleAddBookmark(
+    collectionId: string,
+    html: string | null,
+  ): Promise<"saved" | "scan_warning"> {
+    if (!currentTab) return "scan_warning";
+    const result = await api.addBookmark(
+      collectionId,
+      currentTab.url,
+      currentTab.title,
+      html,
+      false,
+      currentTab.faviconUrl,
+    );
     if (result && "status" in result && result.status === "scan_warning") {
       setScanWarning(result as ScanWarning);
-      setPendingSave({ collectionId, url: currentTab.url, title: currentTab.title, html });
-      return;
+      setPendingSave({
+        collectionId,
+        url: currentTab.url,
+        title: currentTab.title,
+        html,
+        faviconUrl: currentTab.faviconUrl,
+      });
+      return "scan_warning";
     }
     await loadCollections();
+    return "saved";
   }
 
   async function handleForceSave() {
     if (!pendingSave) return;
-    const { collectionId, url, title, html } = pendingSave;
+    const { collectionId, url, title, html, faviconUrl } = pendingSave;
     try {
-      await api.addBookmark(collectionId, url, title, html, true);
+      await api.addBookmark(collectionId, url, title, html, true, faviconUrl);
       setPendingSave(null);
       setScanWarning(null);
       await loadCollections();
     } catch (e) {
-      alert(`Failed to save: ${(e as Error).message}`);
+      toast.error(`Failed to save: ${(e as Error).message}`);
     }
   }
 
-  async function handleDeleteBookmark(id: string) {
-    await api.deleteBookmark(id);
+  async function handleDeleteBookmarks(ids: string[]) {
+    try {
+      await Promise.all(ids.map((id) => api.deleteBookmark(id)));
+    } catch (e) {
+      toast.error(`Failed to remove bookmarks: ${(e as Error).message}`);
+      throw e;
+    }
     if (selectedCollection) {
       const bms = await api.listBookmarks(selectedCollection.id);
       setBookmarks(bms);
@@ -131,8 +180,8 @@ export default function App() {
     await loadCollections();
   }
 
-  async function handleCollectionRenamed(updated: Collection) {
-    setRenameTarget(null);
+  async function handleCollectionEdited(updated: Collection) {
+    setEditTarget(null);
     await loadCollections();
     if (selectedCollection?.id === updated.id) setSelectedCollection(updated);
   }
@@ -147,7 +196,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden">
+    <div className="flex h-screen min-w-0 flex-col overflow-hidden">
       <Header
         onNewCollection={() => setNewCollectionOpen(true)}
         onSettings={() => setSettingsOpen(true)}
@@ -169,9 +218,8 @@ export default function App() {
             setSearchOpen(false);
             setSearchQuery("");
           }}
-          onRename={() => setRenameTarget(selectedCollection)}
-          onDelete={() => setDeleteTarget(selectedCollection)}
-          onDeleteBookmark={handleDeleteBookmark}
+          onEdit={() => setEditTarget(selectedCollection)}
+          onDeleteBookmarks={handleDeleteBookmarks}
           onReindex={handleReindexBookmark}
         />
       ) : (
@@ -179,12 +227,18 @@ export default function App() {
           collections={collections}
           searchQuery={searchQuery}
           onSelect={handleSelectCollection}
-          onRename={setRenameTarget}
-          onDelete={setDeleteTarget}
+          onEdit={setEditTarget}
         />
       )}
 
-      <CurrentPage currentTab={currentTab} collections={collections} onAdd={handleAddBookmark} />
+      <AddToCollection
+        currentTab={currentTab}
+        collections={collections}
+        scanWarning={
+          scanWarning && pendingSave?.url === currentTab?.url ? scanWarning : null
+        }
+        onAdd={handleAddBookmark}
+      />
       <StatusBar online={daemonOnline} backend={daemonVersion} />
 
       <NewCollectionDialog
@@ -192,12 +246,16 @@ export default function App() {
         onOpenChange={setNewCollectionOpen}
         onCreated={handleCollectionCreated}
       />
-      {renameTarget && (
-        <RenameCollectionDialog
-          collection={renameTarget}
+      {editTarget && (
+        <EditCollectionDialog
+          collection={editTarget}
           open={true}
-          onOpenChange={(o) => { if (!o) setRenameTarget(null); }}
-          onRenamed={handleCollectionRenamed}
+          onOpenChange={(o) => { if (!o) setEditTarget(null); }}
+          onEdited={handleCollectionEdited}
+          onDelete={() => {
+            setDeleteTarget(editTarget);
+            setEditTarget(null);
+          }}
         />
       )}
       {deleteTarget && (
