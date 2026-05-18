@@ -29,6 +29,6 @@
     }
   ],
   "action": {
-    "default_title": "Open Bookmark Context"
+    "default_title": "Toggle Bookmark Context"
   }
 }

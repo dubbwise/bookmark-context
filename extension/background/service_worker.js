@@ -4,6 +4,10 @@ import { capturePageHtml } from "../shared/capturePage.js";
 const MENU_ID = "bookmark-context-add";
 const SUBMENU_NEW = "bookmark-context-new";
 
+async function ensurePanelBehavior() {
+  await chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true });
+}
+
 // Rebuild context menu whenever collections change
 async function rebuildMenu() {
   await chrome.contextMenus.removeAll();
@@ -101,14 +105,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   }
 });
 
-// Open side panel when extension icon is clicked
-chrome.action.onClicked.addListener(async (tab) => {
-  await chrome.sidePanel.open({ tabId: tab.id });
+// Rebuild menu on install and startup; link action icon to panel toggle
+chrome.runtime.onInstalled.addListener(async () => {
+  await ensurePanelBehavior();
+  await rebuildMenu();
 });
-
-// Rebuild menu on install and startup
-chrome.runtime.onInstalled.addListener(rebuildMenu);
-chrome.runtime.onStartup.addListener(rebuildMenu);
+chrome.runtime.onStartup.addListener(async () => {
+  await ensurePanelBehavior();
+  await rebuildMenu();
+});
 
 // Rebuild menu when the side panel creates a new collection
 chrome.runtime.onMessage.addListener((msg) => {
