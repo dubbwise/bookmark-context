@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import BookmarkList from "./BookmarkList";
-import type { Collection, Bookmark } from "../types";
+import type { Collection, Bookmark } from "@/types";
 
 const coll: Collection = { id: "c1", name: "Research", description: "", created_at: "", updated_at: "", bookmark_count: 1 };
 const bookmarks: Bookmark[] = [

@@ -73,3 +73,26 @@ async def test_rename_collection_includes_bookmark_count(client):
     response = await client.patch(f"/collections/{coll_id}", json={"name": "Renamed"})
     assert response.status_code == 200
     assert response.json()["bookmark_count"] == 0
+
+
+async def test_list_collections_includes_ordered_favicon_previews(client):
+    r = await client.post("/collections", json={"name": "Research", "description": ""})
+    coll_id = r.json()["id"]
+    await client.post(
+        f"/collections/{coll_id}/bookmarks",
+        json={"url": "https://a.com/1", "title": "A1", "favicon_url": "https://a.com/favicon.ico"},
+    )
+    await client.post(
+        f"/collections/{coll_id}/bookmarks",
+        json={"url": "https://a.com/2", "title": "A2", "favicon_url": "https://a.com/favicon.ico"},
+    )
+    await client.post(
+        f"/collections/{coll_id}/bookmarks",
+        json={"url": "https://b.com/1", "title": "B1", "favicon_url": "https://b.com/favicon.ico"},
+    )
+    response = await client.get("/collections")
+    previews = response.json()[0]["favicon_previews"]
+    assert [p["favicon_url"] for p in previews] == [
+        "https://a.com/favicon.ico",
+        "https://b.com/favicon.ico",
+    ]

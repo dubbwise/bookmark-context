@@ -2,10 +2,21 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import CollectionList from "./CollectionList";
-import type { Collection } from "../types";
+import type { Collection } from "@/types";
 
 const mockCollections: Collection[] = [
-  { id: "1", name: "Research", description: "", created_at: "", updated_at: "", bookmark_count: 3 },
+  {
+    id: "1",
+    name: "Research",
+    description: "",
+    created_at: "",
+    updated_at: "",
+    bookmark_count: 3,
+    favicon_previews: [
+      { url: "https://a.com", favicon_url: "https://a.com/favicon.ico" },
+      { url: "https://b.com", favicon_url: "https://b.com/favicon.ico" },
+    ],
+  },
   { id: "2", name: "Recipes", description: "", created_at: "", updated_at: "", bookmark_count: 0 },
 ];
 
@@ -19,6 +30,13 @@ describe("CollectionList", () => {
   it("shows bookmark count", () => {
     render(<CollectionList collections={mockCollections} searchQuery="" onSelect={vi.fn()} onEdit={vi.fn()}  />);
     expect(screen.getByText("3 pages")).toBeInTheDocument();
+  });
+
+  it("renders favicon previews for collections that have them", () => {
+    const { container } = render(
+      <CollectionList collections={mockCollections} searchQuery="" onSelect={vi.fn()} onEdit={vi.fn()} />,
+    );
+    expect(container.querySelectorAll("img")).toHaveLength(2);
   });
 
   it("filters by search query", () => {

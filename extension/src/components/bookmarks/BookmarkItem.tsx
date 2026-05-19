@@ -9,8 +9,8 @@ import {
   ItemMedia,
   ItemTitle,
 } from "@/components/ui/item";
-import { Favicon } from "@/components/Favicon";
-import type { Bookmark } from "../types";
+import { Favicon } from "@/components/shared";
+import type { Bookmark } from "@/types";
 
 const STATUS_LABELS: Record<Bookmark["index_status"], string> = {
   done: "Indexed",
@@ -46,7 +46,7 @@ export default function BookmarkItem({
   onSelectChange,
 }: BookmarkItemProps) {
   return (
-    <Item size="xs" variant="default" className="grid grid-cols-[auto_1fr_auto] items-start">
+    <Item size="xs" variant="default" className="min-w-0 grid grid-cols-[auto_1fr_auto] items-start">
       <ItemMedia variant="image">
         <Favicon
           url={bookmark.url}

@@ -12,6 +12,11 @@ class CollectionUpdate(BaseModel):
     description: str = ""
 
 
+class FaviconPreview(BaseModel):
+    url: str
+    favicon_url: str = ""
+
+
 class CollectionResponse(BaseModel):
     id: str
     name: str
@@ -19,6 +24,7 @@ class CollectionResponse(BaseModel):
     created_at: str
     updated_at: str
     bookmark_count: int = 0
+    favicon_previews: list[FaviconPreview] = []
 
 
 class BookmarkCreate(BaseModel):

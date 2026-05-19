@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, it, expect, vi } from "vitest";
 import AddToCollection from "./AddToCollection";
-import type { Collection, ScanWarning } from "../types";
+import type { Collection, ScanWarning } from "@/types";
 
 const scanWarning: ScanWarning = {
   status: "scan_warning",

@@ -18,11 +18,11 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Favicon } from "@/components/Favicon";
+import { Favicon } from "@/components/shared";
 import { toast } from "@/lib/toast";
 import { capturePageHtml } from "@/lib/capturePage";
 import { TriangleAlertIcon } from "lucide-react";
-import type { Collection, CurrentTab, ScanWarning } from "../types";
+import type { Collection, CurrentTab, ScanWarning } from "@/types";
 
 export type { CurrentTab };
 

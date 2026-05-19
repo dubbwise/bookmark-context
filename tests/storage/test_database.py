@@ -25,6 +25,26 @@ def test_delete_collection(db: Database):
     assert db.list_collections() == []
 
 
+def test_list_collections_favicon_previews_deduped_and_ordered(db):
+    coll_id = db.create_collection("Research", "")
+    db.add_bookmark(coll_id, "https://a.com/1", "A1", "https://a.com/favicon.ico")
+    db.add_bookmark(coll_id, "https://a.com/2", "A2", "https://a.com/favicon.ico")
+    db.add_bookmark(coll_id, "https://b.com/1", "B1", "https://b.com/favicon.ico")
+    db.add_bookmark(coll_id, "https://b.com/2", "B2", "https://b.com/favicon.ico")
+    db.add_bookmark(coll_id, "https://b.com/3", "B3", "https://b.com/favicon.ico")
+    db.add_bookmark(coll_id, "https://c.com/", "C", "")
+
+    colls = db.list_collections()
+    assert len(colls) == 1
+    previews = colls[0]["favicon_previews"]
+    assert [p["favicon_url"] for p in previews[:2]] == [
+        "https://b.com/favicon.ico",
+        "https://a.com/favicon.ico",
+    ]
+    assert previews[2]["url"] == "https://c.com/"
+    assert previews[2]["favicon_url"] == ""
+
+
 def test_add_and_list_bookmarks(db: Database):
     coll_id = db.create_collection("Research", "")
     bm_id = db.add_bookmark(coll_id, "https://example.com", "Example")

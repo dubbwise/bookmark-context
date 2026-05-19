@@ -16,7 +16,7 @@ def create_collection(body: CollectionCreate, request: Request):
     db = request.app.state.db
     coll_id = db.create_collection(body.name, body.description)
     coll = db.get_collection(coll_id)
-    return CollectionResponse(**coll, bookmark_count=0)
+    return CollectionResponse(**coll, bookmark_count=0, favicon_previews=[])
 
 
 @router.patch("/{collection_id}", response_model=CollectionResponse)
@@ -27,7 +27,8 @@ def rename_collection(collection_id: str, body: CollectionUpdate, request: Reque
     db.update_collection(collection_id, body.name, body.description)
     coll = db.get_collection(collection_id)
     count = len(db.list_bookmarks(collection_id))
-    return CollectionResponse(**coll, bookmark_count=count)
+    previews = db.favicon_previews_for_collection(collection_id)
+    return CollectionResponse(**coll, bookmark_count=count, favicon_previews=previews)
 
 
 @router.delete("/{collection_id}", status_code=204)

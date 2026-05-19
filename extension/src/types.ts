@@ -1,3 +1,8 @@
+export interface FaviconPreview {
+  url: string;
+  favicon_url: string;
+}
+
 export interface Collection {
   id: string;
   name: string;
@@ -5,6 +10,7 @@ export interface Collection {
   created_at: string;
   updated_at: string;
   bookmark_count: number;
+  favicon_previews?: FaviconPreview[];
 }
 
 export interface Bookmark {

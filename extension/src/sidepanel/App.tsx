@@ -1,17 +1,31 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../api";
 import type { Collection, Bookmark, ScanWarning } from "../types";
-import Header from "../components/Header";
-import SearchBar from "../components/SearchBar";
-import CollectionList from "../components/CollectionList";
-import BookmarkList from "../components/BookmarkList";
-import AddToCollection from "../components/AddToCollection";
-import StatusBar from "../components/StatusBar";
-import ThemeDemoView from "../components/ThemeDemoView";
-import AppDialogs, { type RemoveBookmarksRequest } from "../components/dialogs/AppDialogs";
-import SettingsDrawer from "../components/SettingsDrawer";
+import { Header, SearchBar, StatusBar } from "@/components/layout";
+import { CollectionList } from "@/components/collections";
+import { BookmarkList } from "@/components/bookmarks";
+import { AddToCollection } from "@/components/add-bookmark";
+import { SettingsDrawer } from "@/components/settings";
+import { ThemeDemoView } from "@/components/dev";
+import AppDialogs, { type RemoveBookmarksRequest } from "@/components/dialogs/AppDialogs";
 import { toast } from "@/lib/toast";
 import { useActiveTab } from "@/lib/useActiveTab";
+import { rankFaviconPreviews } from "@/lib/collectionFavicons";
+
+async function enrichCollectionsWithFavicons(cols: Collection[]): Promise<Collection[]> {
+  return Promise.all(
+    cols.map(async (col) => {
+      if (col.favicon_previews && col.favicon_previews.length > 0) return col;
+      if (col.bookmark_count === 0) return { ...col, favicon_previews: [] };
+      try {
+        const bookmarks = await api.listBookmarks(col.id);
+        return { ...col, favicon_previews: rankFaviconPreviews(bookmarks) };
+      } catch {
+        return col;
+      }
+    }),
+  );
+}
 
 export default function App() {
   const [collections, setCollections] = useState<Collection[]>([]);
@@ -41,7 +55,12 @@ export default function App() {
   const loadCollections = useCallback(async () => {
     try {
       const cols = await api.listCollections();
-      setCollections(cols);
+      const enriched = await enrichCollectionsWithFavicons(cols);
+      setCollections(enriched);
+      setSelectedCollection((prev) => {
+        if (!prev) return prev;
+        return enriched.find((c) => c.id === prev.id) ?? prev;
+      });
     } catch {
       // daemon offline
     }
@@ -208,7 +227,7 @@ export default function App() {
   }
 
   return (
-    <div className="flex h-screen min-w-0 flex-col overflow-hidden testttt">
+    <div className="flex h-full min-h-0 min-w-0 flex-col overflow-hidden">
       <Header
         onNewCollection={() => setNewCollectionOpen(true)}
         onSettings={() => setSettingsOpen(true)}
@@ -220,37 +239,39 @@ export default function App() {
         <SearchBar value={searchQuery} onChange={setSearchQuery} autoFocus />
       )}
 
-      {themeDemoOpen ? (
-        <ThemeDemoView onBack={() => setThemeDemoOpen(false)} />
-      ) : selectedCollection ? (
-        <BookmarkList
-          collection={selectedCollection}
-          bookmarks={bookmarks}
-          onBack={() => {
-            setSelectedCollection(null);
-            setBookmarks([]);
-            setSearchOpen(false);
-            setSearchQuery("");
-          }}
-          onEdit={() => setEditTarget(selectedCollection)}
-          onRequestRemoveSelected={(ids) => {
-            if (!selectedCollection) return;
-            setRemoveBookmarks({
-              collectionName: selectedCollection.name,
-              bookmarkIds: ids,
-            });
-          }}
-          onReindexBookmarks={handleReindexBookmarks}
-          clearSelectionToken={clearBookmarkSelectionToken}
-        />
-      ) : (
-        <CollectionList
-          collections={collections}
-          searchQuery={searchQuery}
-          onSelect={handleSelectCollection}
-          onEdit={setEditTarget}
-        />
-      )}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        {themeDemoOpen ? (
+          <ThemeDemoView onBack={() => setThemeDemoOpen(false)} />
+        ) : selectedCollection ? (
+          <BookmarkList
+            collection={selectedCollection}
+            bookmarks={bookmarks}
+            onBack={() => {
+              setSelectedCollection(null);
+              setBookmarks([]);
+              setSearchOpen(false);
+              setSearchQuery("");
+            }}
+            onEdit={() => setEditTarget(selectedCollection)}
+            onRequestRemoveSelected={(ids) => {
+              if (!selectedCollection) return;
+              setRemoveBookmarks({
+                collectionName: selectedCollection.name,
+                bookmarkIds: ids,
+              });
+            }}
+            onReindexBookmarks={handleReindexBookmarks}
+            clearSelectionToken={clearBookmarkSelectionToken}
+          />
+        ) : (
+          <CollectionList
+            collections={collections}
+            searchQuery={searchQuery}
+            onSelect={handleSelectCollection}
+            onEdit={setEditTarget}
+          />
+        )}
+      </div>
 
       {!themeDemoOpen && (
         <AddToCollection

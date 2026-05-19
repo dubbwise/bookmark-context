@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/empty";
 import { ItemGroup } from "@/components/ui/item";
 import CollectionItem from "./CollectionItem";
-import type { Collection } from "../types";
+import type { Collection } from "@/types";
 
 interface CollectionListProps {
   collections: Collection[];

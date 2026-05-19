@@ -1,8 +1,11 @@
 from __future__ import annotations
 import sqlite3
 import uuid
+from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
+
+from bookmark_context.favicon import favicon_key
 
 
 def _now() -> str:
@@ -71,7 +74,42 @@ class Database:
                 GROUP BY c.id
                 ORDER BY c.created_at
             """).fetchall()
-        return [dict(r) for r in rows]
+        previews = self._favicon_previews_by_collection()
+        result = []
+        for row in rows:
+            coll = dict(row)
+            coll["favicon_previews"] = previews.get(coll["id"], [])
+            result.append(coll)
+        return result
+
+    def _favicon_previews_by_collection(self) -> dict[str, list[dict]]:
+        with self._connect() as conn:
+            rows = conn.execute(
+                "SELECT collection_id, url, favicon_url FROM bookmarks"
+            ).fetchall()
+        stats: dict[str, dict[str, dict]] = defaultdict(dict)
+        for row in rows:
+            coll_id = row["collection_id"]
+            url = row["url"]
+            favicon_url = row["favicon_url"] or ""
+            key = favicon_key(url, favicon_url)
+            if not key:
+                continue
+            bucket = stats[coll_id]
+            if key not in bucket:
+                bucket[key] = {"count": 0, "url": url, "favicon_url": favicon_url}
+            bucket[key]["count"] += 1
+        result: dict[str, list[dict]] = {}
+        for coll_id, by_key in stats.items():
+            ordered = sorted(by_key.values(), key=lambda x: (-x["count"], x["url"]))
+            result[coll_id] = [
+                {"url": entry["url"], "favicon_url": entry["favicon_url"]}
+                for entry in ordered
+            ]
+        return result
+
+    def favicon_previews_for_collection(self, collection_id: str) -> list[dict]:
+        return self._favicon_previews_by_collection().get(collection_id, [])
 
     def get_collection(self, coll_id: str) -> dict | None:
         with self._connect() as conn:
